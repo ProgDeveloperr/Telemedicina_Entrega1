@@ -1,4 +1,10 @@
+package GUI;
 import javax.swing.JOptionPane;
+
+import BLL.Menu;
+import BLL.TipoUsuario;
+import BLL.Usuario;
+
 
 public class Main {
 

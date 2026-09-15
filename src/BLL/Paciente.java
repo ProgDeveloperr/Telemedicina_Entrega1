@@ -1,3 +1,4 @@
+package BLL;
 public class Paciente {
 
 	private int idPaciente;

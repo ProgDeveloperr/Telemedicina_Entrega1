@@ -1,3 +1,4 @@
+package BLL;
 public interface Menu {
 
 	// Prototipo visto en clase
