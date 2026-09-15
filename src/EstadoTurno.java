@@ -1,0 +1,6 @@
+public enum EstadoTurno {
+	PENDIENTE,
+	CONFIRMADO,
+	CANCELADO,
+	PRESENTE
+}
