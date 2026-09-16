@@ -4,8 +4,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
+import BLL.Profesional;
+import BLL.TipoUsuario;
 import BLL.Usuario;
 import DLL.Conexion;
+import DLL.ControllerProfesional;
 import DLL.ControllerUsuario;
 
 public class Main {
@@ -40,12 +43,14 @@ public class Main {
 		String clave = new String(campoClave.getPassword());
 
 		if (nombreUsuario.isEmpty() || clave.isEmpty()) {
+
 			JOptionPane.showMessageDialog(
 					null,
 					"Debe ingresar usuario y contraseña.",
 					"Datos incompletos",
 					JOptionPane.WARNING_MESSAGE
 			);
+
 			return;
 		}
 
@@ -73,6 +78,33 @@ public class Main {
 				"Inicio de sesión correcto",
 				JOptionPane.INFORMATION_MESSAGE
 		);
+
+		// Si el usuario logueado es PROFESIONAL,
+		// buscamos sus datos profesionales utilizando su id de usuario.
+		if (logueado.getTipoUsuario() == TipoUsuario.PROFESIONAL) {
+
+			ControllerProfesional controllerProfesional = new ControllerProfesional();
+
+			Profesional profesional = controllerProfesional.obtenerPorUsuario(
+					logueado.getIdUsuario()
+			);
+
+			if (profesional != null) {
+
+				System.out.println(
+						"PROFESIONAL DB OK -> "
+								+ profesional.getIdProfesional() + " | "
+								+ profesional.getMatricula() + " | "
+								+ profesional.getEspecialidad()
+				);
+
+			} else {
+
+				System.out.println(
+						"No se encontraron datos profesionales asociados."
+				);
+			}
+		}
 
 		logueado.MenuPrincipal();
 	}
