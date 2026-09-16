@@ -1,11 +1,9 @@
 package BLL;
-import java.util.LinkedList;
 
 import javax.swing.JOptionPane;
 
 public class Usuario implements Menu {
 
-	private static LinkedList<Usuario> usuarios = new LinkedList<Usuario>();
 
 	private int idUsuario;
 	private String nombre;
@@ -24,18 +22,14 @@ public class Usuario implements Menu {
 		this.tipoUsuario = tipoUsuario;
 	}
 
-	public boolean autenticar(String nombreUsuario, String clave) {
-		return this.nombreUsuario.equals(nombreUsuario) && this.clave.equals(clave);
-	}
+	
 
 	// Queda preparado para desarrollar permisos mas adelante.
 	public boolean tienePermiso(String permiso) {
 		return false;
 	}
 
-	public static LinkedList<Usuario> getUsuarios() {
-		return usuarios;
-	}
+	
 
 	public int getIdUsuario() {
 		return idUsuario;
