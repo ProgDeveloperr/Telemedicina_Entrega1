@@ -4,12 +4,15 @@ import javax.swing.JOptionPane;
 import BLL.Menu;
 import BLL.TipoUsuario;
 import BLL.Usuario;
+import DLL.Conexion;
 
 
 public class Main {
 
 	public static void main(String[] args) {
 
+		Conexion.getInstance();
+		
 		// Usuarios de demostracion para visualizar los dos perfiles de la maqueta.
 		Usuario.getUsuarios().add(
 				new Usuario(1, "Ana", "Recepcion", "recepcion", "1234", TipoUsuario.EMPLEADO));
