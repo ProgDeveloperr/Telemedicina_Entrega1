@@ -1,59 +1,79 @@
 package GUI;
-import javax.swing.JOptionPane;
 
-import BLL.Menu;
-import BLL.TipoUsuario;
+import javax.swing.JOptionPane;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+
 import BLL.Usuario;
 import DLL.Conexion;
-
+import DLL.ControllerUsuario;
 
 public class Main {
 
 	public static void main(String[] args) {
 
 		Conexion.getInstance();
-		
-		// Usuarios de demostracion para visualizar los dos perfiles de la maqueta.
-		Usuario.getUsuarios().add(
-				new Usuario(1, "Ana", "Recepcion", "recepcion", "1234", TipoUsuario.EMPLEADO));
 
-		Usuario.getUsuarios().add(
-				new Usuario(2, "Carlos", "Medico", "medico", "1234", TipoUsuario.PROFESIONAL));
+		ControllerUsuario controllerUsuario = new ControllerUsuario();
 
-		String[] perfiles = {
-				"Empleado / Recepcionista",
-				"Medico / Profesional",
-				"Salir"
+		JTextField campoUsuario = new JTextField();
+		JPasswordField campoClave = new JPasswordField();
+
+		Object[] campos = {
+				"Usuario:", campoUsuario,
+				"Contraseña:", campoClave
 		};
 
-		int perfil = JOptionPane.showOptionDialog(
+		int opcion = JOptionPane.showConfirmDialog(
 				null,
-				"Seleccione un perfil para visualizar la maqueta",
-				"Telemedicina - Entrega 1",
-				JOptionPane.DEFAULT_OPTION,
-				JOptionPane.PLAIN_MESSAGE,
-				null,
-				perfiles,
-				perfiles[0]);
+				campos,
+				"Telemedicina - Inicio de sesión",
+				JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE
+		);
 
-		if (perfil == 2 || perfil == JOptionPane.CLOSED_OPTION) {
+		if (opcion != JOptionPane.OK_OPTION) {
 			return;
 		}
 
-		String usuarioDemo = perfil == 0 ? "recepcion" : "medico";
-		String claveDemo = "1234";
+		String nombreUsuario = campoUsuario.getText().trim();
+		String clave = new String(campoClave.getPassword());
 
-		Usuario logueado = Menu.Login(usuarioDemo, claveDemo);
-
-		if (logueado == null) {
-			JOptionPane.showMessageDialog(null, "No se encontro el usuario.");
-		} else {
+		if (nombreUsuario.isEmpty() || clave.isEmpty()) {
 			JOptionPane.showMessageDialog(
 					null,
-					"Bienvenido: " + logueado.getNombre() + " " + logueado.getApellido()
-							+ "\nPerfil: " + logueado.getTipoUsuario());
-
-			logueado.MenuPrincipal();
+					"Debe ingresar usuario y contraseña.",
+					"Datos incompletos",
+					JOptionPane.WARNING_MESSAGE
+			);
+			return;
 		}
+
+		Usuario logueado = controllerUsuario.login(nombreUsuario, clave);
+
+		if (logueado == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Usuario o contraseña incorrectos.",
+					"Error de autenticación",
+					JOptionPane.ERROR_MESSAGE
+			);
+
+			return;
+		}
+
+		JOptionPane.showMessageDialog(
+				null,
+				"Bienvenido: "
+						+ logueado.getNombre() + " "
+						+ logueado.getApellido()
+						+ "\nPerfil: "
+						+ logueado.getTipoUsuario(),
+				"Inicio de sesión correcto",
+				JOptionPane.INFORMATION_MESSAGE
+		);
+
+		logueado.MenuPrincipal();
 	}
 }
