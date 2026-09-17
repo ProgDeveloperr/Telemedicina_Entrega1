@@ -1,9 +1,8 @@
 package DLL;
 
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
-import com.mysql.jdbc.Connection;
 
 public class Conexion {
 
@@ -16,7 +15,7 @@ public class Conexion {
 
 	private Conexion() {
 		try {
-			conect = (Connection) DriverManager.getConnection(URL, USER, PASSWORD);
+			conect = DriverManager.getConnection(URL, USER, PASSWORD);
 			System.out.println("Se conecto correctamente a Telemedicina");
 		} catch (SQLException e) {
 			System.out.println("No se pudo conectar a Telemedicina");

@@ -15,14 +15,19 @@ CREATE TABLE IF NOT EXISTS usuario (
 );
 
 -- Usuarios iniciales para pruebas de autenticacion
+-- Las contraseñas se almacenan mediante hash BCrypt.
 
 INSERT IGNORE INTO usuario
     (id_usuario, nombre, apellido, nombre_usuario, clave, tipo_usuario)
 VALUES
-    (1, 'Joaquin', 'Gonzalez Garcia', 'recepcion', '1234', 'EMPLEADO'),
-    (2, 'Carlos', 'Medico', 'doctor', '1234', 'PROFESIONAL');
+    (1, 'Joaquin', 'Gonzalez Garcia', 'recepcion',
+     '$2a$10$seYXgwBRrwUr/Mq9XORPOOlk0nma.avTe9PSHJkUmgxJv6x1uAxsq',
+     'EMPLEADO'),
+
+    (2, 'Carlos', 'Medico', 'doctor',
+     '$2a$10$PW29dhJTQosw9AY1weV1buOQkFDOT6xyCnV/M7gCBGVGI/Z.NvxdO',
+     'PROFESIONAL');
     
-    -- Profesionales vinculados a usuarios del sistema
 
 CREATE TABLE IF NOT EXISTS profesional (
     id_profesional INT AUTO_INCREMENT PRIMARY KEY,
@@ -38,7 +43,6 @@ VALUES
     (1, 'MP12345', 'Medicina General', 2);
     
     
-    -- Pacientes registrados en el sistema
 
 CREATE TABLE IF NOT EXISTS paciente (
     id_paciente INT AUTO_INCREMENT PRIMARY KEY,
