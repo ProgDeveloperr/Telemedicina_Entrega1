@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedList;
 
 import BLL.Paciente;
 import repository.PacienteRepository;
@@ -103,4 +104,49 @@ public class ControllerPaciente implements PacienteRepository {
 
 		return null;
 	}
+	
+	@Override
+	public LinkedList<Paciente> buscar(String filtro) {
+
+		LinkedList<Paciente> pacientes = new LinkedList<Paciente>();
+
+		String sql = "SELECT id_paciente, dni, nombre, apellido, telefono "
+				+ "FROM paciente "
+				+ "WHERE dni LIKE ? "
+				+ "OR nombre LIKE ? "
+				+ "OR apellido LIKE ? "
+				+ "ORDER BY apellido, nombre";
+
+		String criterio = "%" + filtro + "%";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setString(1, criterio);
+			statement.setString(2, criterio);
+			statement.setString(3, criterio);
+
+			try (ResultSet result = statement.executeQuery()) {
+
+				while (result.next()) {
+
+					pacientes.add(
+							new Paciente(
+									result.getInt("id_paciente"),
+									result.getString("dni"),
+									result.getString("nombre"),
+									result.getString("apellido"),
+									result.getString("telefono")
+							)
+					);
+				}
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return pacientes;
+	}
+	
+	
 }

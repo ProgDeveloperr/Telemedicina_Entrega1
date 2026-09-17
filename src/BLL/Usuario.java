@@ -1,9 +1,8 @@
 package BLL;
 
+import java.util.LinkedList;
 import javax.swing.JOptionPane;
-
 import javax.swing.JTextField;
-
 import DLL.ControllerPaciente;
 
 public class Usuario implements Menu {
@@ -167,7 +166,7 @@ public class Usuario implements Menu {
 				break;
 
 			case 1:
-				mostrarPendiente("Consultar pacientes");
+				menuConsultarPacientes();
 				break;
 
 			case 2:
@@ -281,6 +280,205 @@ public class Usuario implements Menu {
 			);
 		}
 	}
+	
+	
+	
+	private void menuConsultarPacientes() {
+
+		String[] opciones = {
+				"Buscar por ID",
+				"Buscar por DNI / nombre / apellido",
+				"Volver"
+		};
+
+		int opcion;
+
+		do {
+
+			opcion = JOptionPane.showOptionDialog(
+					null,
+					"Seleccione el tipo de busqueda",
+					"Telemedicina - Consultar pacientes",
+					JOptionPane.DEFAULT_OPTION,
+					JOptionPane.PLAIN_MESSAGE,
+					null,
+					opciones,
+					opciones[0]
+			);
+
+			switch (opcion) {
+
+			case 0:
+				consultarPacientePorId();
+				break;
+
+			case 1:
+				buscarPacientesPorFiltro();
+				break;
+			}
+
+		} while (opcion != 2 && opcion != JOptionPane.CLOSED_OPTION);
+	}
+	
+	
+	private void buscarPacientesPorFiltro() {
+
+		String filtro = JOptionPane.showInputDialog(
+				null,
+				"Ingrese DNI, nombre o apellido:",
+				"Telemedicina - Buscar pacientes",
+				JOptionPane.QUESTION_MESSAGE
+		);
+
+		if (filtro == null) {
+			return;
+		}
+
+		filtro = filtro.trim();
+
+		if (filtro.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Debe ingresar un criterio de busqueda.",
+					"Dato incompleto",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerPaciente controllerPaciente = new ControllerPaciente();
+
+		LinkedList<Paciente> pacientes = controllerPaciente.buscar(filtro);
+
+		if (pacientes.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontraron pacientes para el criterio ingresado.",
+					"Sin resultados",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		StringBuilder resultado = new StringBuilder();
+
+		for (Paciente paciente : pacientes) {
+
+			resultado.append("ID: ")
+					.append(paciente.getIdPaciente())
+					.append("\nDNI: ")
+					.append(paciente.getDni())
+					.append("\nNombre: ")
+					.append(paciente.getNombre())
+					.append(" ")
+					.append(paciente.getApellido())
+					.append("\nTelefono: ")
+					.append(paciente.getTelefono())
+					.append("\n------------------------------\n");
+		}
+
+		JOptionPane.showMessageDialog(
+				null,
+				resultado.toString(),
+				"Pacientes encontrados",
+				JOptionPane.INFORMATION_MESSAGE
+		);
+	}
+	
+	
+	
+	
+	private void consultarPacientePorId() {
+
+		String entrada = JOptionPane.showInputDialog(
+				null,
+				"Ingrese el ID del paciente:",
+				"Telemedicina - Buscar paciente por ID",
+				JOptionPane.QUESTION_MESSAGE
+		);
+
+		if (entrada == null) {
+			return;
+		}
+
+		entrada = entrada.trim();
+
+		if (entrada.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Debe ingresar un ID.",
+					"Dato incompleto",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		int idPaciente;
+
+		try {
+
+			idPaciente = Integer.parseInt(entrada);
+
+			if (idPaciente <= 0) {
+
+				JOptionPane.showMessageDialog(
+						null,
+						"El ID debe ser mayor que cero.",
+						"ID invalido",
+						JOptionPane.WARNING_MESSAGE
+				);
+
+				return;
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID debe ser un numero entero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerPaciente controllerPaciente = new ControllerPaciente();
+
+		Paciente paciente = controllerPaciente.buscarPorId(idPaciente);
+
+		if (paciente == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontro un paciente con el ID ingresado.",
+					"Paciente no encontrado",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		JOptionPane.showMessageDialog(
+				null,
+				"ID: " + paciente.getIdPaciente()
+						+ "\nDNI: " + paciente.getDni()
+						+ "\nNombre: " + paciente.getNombre()
+						+ "\nApellido: " + paciente.getApellido()
+						+ "\nTelefono: " + paciente.getTelefono(),
+				"Datos del paciente",
+				JOptionPane.INFORMATION_MESSAGE
+		);
+	}
+	
+	
+	
 	
 	private void menuProfesionales() {
 		String[] opciones = {

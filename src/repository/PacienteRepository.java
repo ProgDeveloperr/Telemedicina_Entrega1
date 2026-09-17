@@ -1,5 +1,7 @@
 package repository;
 
+import java.util.LinkedList;
+
 import BLL.Paciente;
 
 public interface PacienteRepository {
@@ -9,5 +11,6 @@ public interface PacienteRepository {
 	Paciente buscarPorId(int idPaciente);
 
 	Paciente buscarPorDni(String dni);
-
+	
+	LinkedList<Paciente> buscar(String filtro);
 }
