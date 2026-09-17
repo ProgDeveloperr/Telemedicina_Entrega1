@@ -8,4 +8,6 @@ public interface PacienteRepository {
 
 	Paciente buscarPorId(int idPaciente);
 
+	Paciente buscarPorDni(String dni);
+
 }

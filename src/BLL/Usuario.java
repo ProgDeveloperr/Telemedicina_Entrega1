@@ -2,6 +2,10 @@ package BLL;
 
 import javax.swing.JOptionPane;
 
+import javax.swing.JTextField;
+
+import DLL.ControllerPaciente;
+
 public class Usuario implements Menu {
 
 
@@ -133,6 +137,7 @@ public class Usuario implements Menu {
 	}
 
 	private void menuPacientes() {
+
 		String[] opciones = {
 				"Registrar paciente",
 				"Consultar pacientes",
@@ -140,9 +145,143 @@ public class Usuario implements Menu {
 				"Volver"
 		};
 
-		menuSinFunciones("Pacientes", opciones);
+		int opcion;
+
+		do {
+
+			opcion = JOptionPane.showOptionDialog(
+					null,
+					"Seleccione una opcion",
+					"Telemedicina - Pacientes",
+					JOptionPane.DEFAULT_OPTION,
+					JOptionPane.PLAIN_MESSAGE,
+					null,
+					opciones,
+					opciones[0]
+			);
+
+			switch (opcion) {
+
+			case 0:
+				registrarPaciente();
+				break;
+
+			case 1:
+				mostrarPendiente("Consultar pacientes");
+				break;
+
+			case 2:
+				mostrarPendiente("Modificar datos de paciente");
+				break;
+			}
+
+		} while (opcion != 3 && opcion != JOptionPane.CLOSED_OPTION);
 	}
 
+	private void registrarPaciente() {
+
+		JTextField campoDni = new JTextField();
+		JTextField campoNombre = new JTextField();
+		JTextField campoApellido = new JTextField();
+		JTextField campoTelefono = new JTextField();
+
+		Object[] campos = {
+				"DNI:", campoDni,
+				"Nombre:", campoNombre,
+				"Apellido:", campoApellido,
+				"Telefono:", campoTelefono
+		};
+
+		int opcion = JOptionPane.showConfirmDialog(
+				null,
+				campos,
+				"Telemedicina - Registrar paciente",
+				JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE
+		);
+
+		if (opcion != JOptionPane.OK_OPTION) {
+			return;
+		}
+
+		String dni = campoDni.getText().trim();
+		String nombrePaciente = campoNombre.getText().trim();
+		String apellidoPaciente = campoApellido.getText().trim();
+		String telefono = campoTelefono.getText().trim();
+
+		if (dni.isEmpty()
+				|| nombrePaciente.isEmpty()
+				|| apellidoPaciente.isEmpty()
+				|| telefono.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Todos los campos son obligatorios.",
+					"Datos incompletos",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		if (!dni.matches("\\d+")) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El DNI debe contener solamente numeros.",
+					"DNI invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerPaciente controllerPaciente = new ControllerPaciente();
+
+		Paciente existente = controllerPaciente.buscarPorDni(dni);
+
+		if (existente != null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Ya existe un paciente registrado con ese DNI.",
+					"Paciente existente",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Paciente pacienteNuevo = new Paciente(
+				0,
+				dni,
+				nombrePaciente,
+				apellidoPaciente,
+				telefono
+		);
+
+		boolean registrado = controllerPaciente.registrar(pacienteNuevo);
+
+		if (registrado) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Paciente registrado correctamente.",
+					"Registro exitoso",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+		} else {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudo registrar el paciente.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+		}
+	}
+	
 	private void menuProfesionales() {
 		String[] opciones = {
 				"Registrar profesional",

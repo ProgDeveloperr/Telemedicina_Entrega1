@@ -72,4 +72,35 @@ public class ControllerPaciente implements PacienteRepository {
 
 		return null;
 	}
+	@Override
+	public Paciente buscarPorDni(String dni) {
+
+		String sql = "SELECT id_paciente, dni, nombre, apellido, telefono "
+				+ "FROM paciente "
+				+ "WHERE dni = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setString(1, dni);
+
+			try (ResultSet result = statement.executeQuery()) {
+
+				if (result.next()) {
+
+					return new Paciente(
+							result.getInt("id_paciente"),
+							result.getString("dni"),
+							result.getString("nombre"),
+							result.getString("apellido"),
+							result.getString("telefono")
+					);
+				}
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
 }
