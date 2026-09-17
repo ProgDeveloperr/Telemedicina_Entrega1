@@ -36,3 +36,14 @@ INSERT IGNORE INTO profesional
     (id_profesional, matricula, especialidad, usuario_id)
 VALUES
     (1, 'MP12345', 'Medicina General', 2);
+    
+    
+    -- Pacientes registrados en el sistema
+
+CREATE TABLE IF NOT EXISTS paciente (
+    id_paciente INT AUTO_INCREMENT PRIMARY KEY,
+    dni VARCHAR(20) NOT NULL UNIQUE,
+    nombre VARCHAR(50) NOT NULL,
+    apellido VARCHAR(50) NOT NULL,
+    telefono VARCHAR(30) NOT NULL
+);
