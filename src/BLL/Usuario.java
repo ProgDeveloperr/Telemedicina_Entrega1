@@ -714,7 +714,7 @@ public class Usuario implements Menu {
 				break;
 
 			case 2:
-				mostrarPendiente("Consultar disponibilidad de profesionales");
+				consultarDisponibilidadProfesional();
 				break;
 			}
 
@@ -1086,6 +1086,202 @@ public class Usuario implements Menu {
 	}
 	
 	
+	
+	private void consultarDisponibilidadProfesional() {
+
+		ControllerProfesional controllerProfesional =
+				new ControllerProfesional();
+
+		LinkedList<Profesional> profesionales =
+				controllerProfesional.buscar("");
+
+		if (profesionales.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No hay profesionales registrados.",
+					"Sin profesionales",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		StringBuilder listadoProfesionales = new StringBuilder();
+
+		for (Profesional profesional : profesionales) {
+
+			Usuario usuarioProfesional =
+					controllerProfesional.obtenerUsuarioPorProfesional(
+							profesional.getIdProfesional()
+					);
+
+			if (usuarioProfesional != null) {
+
+				listadoProfesionales.append("ID: ")
+						.append(profesional.getIdProfesional())
+						.append(" | ")
+						.append(usuarioProfesional.getNombre())
+						.append(" ")
+						.append(usuarioProfesional.getApellido())
+						.append(" | ")
+						.append(profesional.getEspecialidad())
+						.append("\n");
+			}
+		}
+
+		String entrada = JOptionPane.showInputDialog(
+				null,
+				listadoProfesionales.toString()
+						+ "\nIngrese el ID del profesional:",
+				"Telemedicina - Consultar disponibilidad",
+				JOptionPane.QUESTION_MESSAGE
+		);
+
+		if (entrada == null) {
+			return;
+		}
+
+		entrada = entrada.trim();
+
+		if (entrada.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Debe ingresar un ID.",
+					"Dato incompleto",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		int idProfesional;
+
+		try {
+
+			idProfesional = Integer.parseInt(entrada);
+
+			if (idProfesional <= 0) {
+
+				JOptionPane.showMessageDialog(
+						null,
+						"El ID debe ser mayor que cero.",
+						"ID invalido",
+						JOptionPane.WARNING_MESSAGE
+				);
+
+				return;
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID debe ser un numero entero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Profesional profesional =
+				controllerProfesional.buscarPorId(idProfesional);
+
+		if (profesional == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontro un profesional con el ID ingresado.",
+					"Profesional no encontrado",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		Usuario usuarioProfesional =
+				controllerProfesional.obtenerUsuarioPorProfesional(
+						idProfesional
+				);
+
+		ControllerDisponibilidad controllerDisponibilidad =
+				new ControllerDisponibilidad();
+
+		LinkedList<Disponibilidad> disponibilidades =
+				controllerDisponibilidad.obtenerPorProfesional(
+						idProfesional
+				);
+
+		if (disponibilidades.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El profesional "
+							+ usuarioProfesional.getNombre()
+							+ " "
+							+ usuarioProfesional.getApellido()
+							+ " no tiene disponibilidades registradas.",
+					"Sin disponibilidad",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		DateTimeFormatter formatoFecha =
+				DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+		DateTimeFormatter formatoHora =
+				DateTimeFormatter.ofPattern("HH:mm");
+
+		StringBuilder resultado = new StringBuilder();
+
+		resultado.append("Profesional: ")
+				.append(usuarioProfesional.getNombre())
+				.append(" ")
+				.append(usuarioProfesional.getApellido())
+				.append("\nEspecialidad: ")
+				.append(profesional.getEspecialidad())
+				.append("\nMatricula: ")
+				.append(profesional.getMatricula())
+				.append("\n\nDisponibilidad:\n\n");
+
+		for (Disponibilidad disponibilidad : disponibilidades) {
+
+			resultado.append("Fecha: ")
+					.append(
+							disponibilidad.getFecha()
+									.format(formatoFecha)
+					)
+					.append("\nHorario: ")
+					.append(
+							disponibilidad.getHoraInicio()
+									.format(formatoHora)
+					)
+					.append(" - ")
+					.append(
+							disponibilidad.getHoraFin()
+									.format(formatoHora)
+					)
+					.append("\n------------------------------\n");
+		}
+
+		JOptionPane.showMessageDialog(
+				null,
+				resultado.toString(),
+				"Disponibilidad del profesional",
+				JOptionPane.INFORMATION_MESSAGE
+		);
+	}
+	
+	
+	
+	
+	
+	
+	
 	private void menuTurnos() {
 		String[] opciones = {
 				"Asignar turno",
@@ -1100,6 +1296,12 @@ public class Usuario implements Menu {
 		menuSinFunciones("Turnos", opciones);
 	}
 
+	
+	
+	
+
+	
+	
 	private void menuConsultasEmpleado() {
 		String[] opciones = {
 				"Consultar retraso registrado",
