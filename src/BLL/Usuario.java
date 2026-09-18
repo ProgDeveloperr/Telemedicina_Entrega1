@@ -705,7 +705,7 @@ public class Usuario implements Menu {
 				break;
 
 			case 1:
-				mostrarPendiente("Consultar profesionales");
+				menuConsultarProfesionales();
 				break;
 
 			case 2:
@@ -857,7 +857,229 @@ public class Usuario implements Menu {
 		}
 	}
 	
-		
+	private void menuConsultarProfesionales() {
+
+		String[] opciones = {
+				"Buscar por ID",
+				"Buscar por nombre / apellido / usuario / matricula / especialidad",
+				"Volver"
+		};
+
+		int opcion;
+
+		do {
+
+			opcion = JOptionPane.showOptionDialog(
+					null,
+					"Seleccione el tipo de busqueda",
+					"Telemedicina - Consultar profesionales",
+					JOptionPane.DEFAULT_OPTION,
+					JOptionPane.PLAIN_MESSAGE,
+					null,
+					opciones,
+					opciones[0]
+			);
+
+			switch (opcion) {
+
+			case 0:
+				consultarProfesionalPorId();
+				break;
+
+			case 1:
+				buscarProfesionalesPorFiltro();
+				break;
+			}
+
+		} while (opcion != 2 && opcion != JOptionPane.CLOSED_OPTION);
+	}	
+	
+	
+	private void consultarProfesionalPorId() {
+
+		String entrada = JOptionPane.showInputDialog(
+				null,
+				"Ingrese el ID del profesional:",
+				"Telemedicina - Buscar profesional por ID",
+				JOptionPane.QUESTION_MESSAGE
+		);
+
+		if (entrada == null) {
+			return;
+		}
+
+		entrada = entrada.trim();
+
+		if (entrada.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Debe ingresar un ID.",
+					"Dato incompleto",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		int idProfesional;
+
+		try {
+
+			idProfesional = Integer.parseInt(entrada);
+
+			if (idProfesional <= 0) {
+
+				JOptionPane.showMessageDialog(
+						null,
+						"El ID debe ser mayor que cero.",
+						"ID invalido",
+						JOptionPane.WARNING_MESSAGE
+				);
+
+				return;
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID debe ser un numero entero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerProfesional controllerProfesional =
+				new ControllerProfesional();
+
+		Profesional profesional =
+				controllerProfesional.buscarPorId(idProfesional);
+
+		if (profesional == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontro un profesional con el ID ingresado.",
+					"Profesional no encontrado",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		Usuario usuarioProfesional =
+				controllerProfesional.obtenerUsuarioPorProfesional(
+						profesional.getIdProfesional()
+				);
+
+		if (usuarioProfesional == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudieron obtener los datos del usuario asociado.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+
+			return;
+		}
+
+		JOptionPane.showMessageDialog(
+				null,
+				"ID profesional: " + profesional.getIdProfesional()
+						+ "\nNombre: " + usuarioProfesional.getNombre()
+						+ "\nApellido: " + usuarioProfesional.getApellido()
+						+ "\nUsuario: " + usuarioProfesional.getNombreUsuario()
+						+ "\nMatricula: " + profesional.getMatricula()
+						+ "\nEspecialidad: " + profesional.getEspecialidad(),
+				"Datos del profesional",
+				JOptionPane.INFORMATION_MESSAGE
+		);
+	}
+	
+	private void buscarProfesionalesPorFiltro() {
+
+		String filtro = JOptionPane.showInputDialog(
+				null,
+				"Ingrese nombre, apellido, usuario, matricula o especialidad:",
+				"Telemedicina - Buscar profesionales",
+				JOptionPane.QUESTION_MESSAGE
+		);
+
+		if (filtro == null) {
+			return;
+		}
+
+		filtro = filtro.trim();
+
+		if (filtro.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Debe ingresar un criterio de busqueda.",
+					"Dato incompleto",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerProfesional controllerProfesional =
+				new ControllerProfesional();
+
+		LinkedList<Profesional> profesionales =
+				controllerProfesional.buscar(filtro);
+
+		if (profesionales.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontraron profesionales para el criterio ingresado.",
+					"Sin resultados",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		StringBuilder resultado = new StringBuilder();
+
+		for (Profesional profesional : profesionales) {
+
+			Usuario usuarioProfesional =
+					controllerProfesional.obtenerUsuarioPorProfesional(
+							profesional.getIdProfesional()
+					);
+
+			if (usuarioProfesional != null) {
+
+				resultado.append("ID: ")
+						.append(profesional.getIdProfesional())
+						.append("\nNombre: ")
+						.append(usuarioProfesional.getNombre())
+						.append(" ")
+						.append(usuarioProfesional.getApellido())
+						.append("\nUsuario: ")
+						.append(usuarioProfesional.getNombreUsuario())
+						.append("\nMatricula: ")
+						.append(profesional.getMatricula())
+						.append("\nEspecialidad: ")
+						.append(profesional.getEspecialidad())
+						.append("\n------------------------------\n");
+			}
+		}
+
+		JOptionPane.showMessageDialog(
+				null,
+				resultado.toString(),
+				"Profesionales encontrados",
+				JOptionPane.INFORMATION_MESSAGE
+		);
+	}
+	
 	
 	private void menuTurnos() {
 		String[] opciones = {

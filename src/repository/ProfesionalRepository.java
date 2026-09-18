@@ -1,5 +1,7 @@
 package repository;
 
+import java.util.LinkedList;
+
 import BLL.Profesional;
 import BLL.Usuario;
 
@@ -10,5 +12,11 @@ public interface ProfesionalRepository {
 	boolean registrar(Usuario usuario, Profesional profesional);
 
 	boolean existeMatricula(String matricula);
+
+	Profesional buscarPorId(int idProfesional);
+
+	LinkedList<Profesional> buscar(String filtro);
+
+	Usuario obtenerUsuarioPorProfesional(int idProfesional);
 
 }

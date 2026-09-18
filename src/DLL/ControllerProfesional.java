@@ -11,7 +11,7 @@ import BLL.TipoUsuario;
 import BLL.Usuario;
 import repository.Hashing;
 import repository.ProfesionalRepository;
-
+import java.util.LinkedList;
 
 public class ControllerProfesional implements ProfesionalRepository {
 
@@ -162,5 +162,123 @@ public class ControllerProfesional implements ProfesionalRepository {
 	}
 	
 	
+	
+	@Override
+	public Profesional buscarPorId(int idProfesional) {
+
+		String sql = "SELECT id_profesional, matricula, especialidad "
+				+ "FROM profesional "
+				+ "WHERE id_profesional = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setInt(1, idProfesional);
+
+			try (ResultSet result = statement.executeQuery()) {
+
+				if (result.next()) {
+
+					return new Profesional(
+							result.getInt("id_profesional"),
+							result.getString("matricula"),
+							result.getString("especialidad")
+					);
+				}
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+	
+	
+	@Override
+	public LinkedList<Profesional> buscar(String filtro) {
+
+		LinkedList<Profesional> profesionales =
+				new LinkedList<Profesional>();
+
+		String sql = "SELECT p.id_profesional, p.matricula, p.especialidad "
+				+ "FROM profesional p "
+				+ "INNER JOIN usuario u "
+				+ "ON p.usuario_id = u.id_usuario "
+				+ "WHERE u.nombre LIKE ? "
+				+ "OR u.apellido LIKE ? "
+				+ "OR u.nombre_usuario LIKE ? "
+				+ "OR p.matricula LIKE ? "
+				+ "OR p.especialidad LIKE ? "
+				+ "ORDER BY u.apellido, u.nombre";
+
+		String criterio = "%" + filtro + "%";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setString(1, criterio);
+			statement.setString(2, criterio);
+			statement.setString(3, criterio);
+			statement.setString(4, criterio);
+			statement.setString(5, criterio);
+
+			try (ResultSet result = statement.executeQuery()) {
+
+				while (result.next()) {
+
+					profesionales.add(
+							new Profesional(
+									result.getInt("id_profesional"),
+									result.getString("matricula"),
+									result.getString("especialidad")
+							)
+					);
+				}
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return profesionales;
+	}
+	
+	
+	@Override
+	public Usuario obtenerUsuarioPorProfesional(int idProfesional) {
+
+		String sql = "SELECT u.id_usuario, u.nombre, u.apellido, "
+				+ "u.nombre_usuario, u.tipo_usuario "
+				+ "FROM usuario u "
+				+ "INNER JOIN profesional p "
+				+ "ON p.usuario_id = u.id_usuario "
+				+ "WHERE p.id_profesional = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setInt(1, idProfesional);
+
+			try (ResultSet result = statement.executeQuery()) {
+
+				if (result.next()) {
+
+					return new Usuario(
+							result.getInt("id_usuario"),
+							result.getString("nombre"),
+							result.getString("apellido"),
+							result.getString("nombre_usuario"),
+							"",
+							TipoUsuario.valueOf(
+									result.getString("tipo_usuario")
+							)
+					);
+				}
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
 	
 }
