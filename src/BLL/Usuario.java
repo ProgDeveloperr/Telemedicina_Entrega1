@@ -1,6 +1,10 @@
 package BLL;
 
 import java.util.LinkedList;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
@@ -9,6 +13,7 @@ import javax.swing.JTextField;
 import DLL.ControllerPaciente;
 import DLL.ControllerProfesional;
 import DLL.ControllerUsuario;
+import DLL.ControllerDisponibilidad;
 
 public class Usuario implements Menu {
 
@@ -1106,14 +1111,210 @@ public class Usuario implements Menu {
 	}
 
 	private void menuDisponibilidad() {
+
 		String[] opciones = {
 				"Establecer disponibilidad",
 				"Modificar disponibilidad",
 				"Volver"
 		};
 
-		menuSinFunciones("Disponibilidad", opciones);
+		int opcion;
+
+		do {
+
+			opcion = JOptionPane.showOptionDialog(
+					null,
+					"Seleccione una opcion",
+					"Telemedicina - Disponibilidad",
+					JOptionPane.DEFAULT_OPTION,
+					JOptionPane.PLAIN_MESSAGE,
+					null,
+					opciones,
+					opciones[0]
+			);
+
+			switch (opcion) {
+
+			case 0:
+				establecerDisponibilidad();
+				break;
+
+			case 1:
+				mostrarPendiente("Modificar disponibilidad");
+				break;
+			}
+
+		} while (opcion != 2 && opcion != JOptionPane.CLOSED_OPTION);
 	}
+	
+	
+	private void establecerDisponibilidad() {
+
+		ControllerProfesional controllerProfesional =
+				new ControllerProfesional();
+
+		Profesional profesional =
+				controllerProfesional.obtenerPorUsuario(idUsuario);
+
+		if (profesional == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudieron obtener los datos del profesional.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+
+			return;
+		}
+
+		JTextField campoFecha = new JTextField();
+		JTextField campoHoraInicio = new JTextField();
+		JTextField campoHoraFin = new JTextField();
+
+		Object[] campos = {
+				"Fecha (dd/MM/yyyy):", campoFecha,
+				"Hora inicio (HH:mm):", campoHoraInicio,
+				"Hora fin (HH:mm):", campoHoraFin
+		};
+
+		int opcion = JOptionPane.showConfirmDialog(
+				null,
+				campos,
+				"Telemedicina - Establecer disponibilidad",
+				JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE
+		);
+
+		if (opcion != JOptionPane.OK_OPTION) {
+			return;
+		}
+
+		String fechaTexto = campoFecha.getText().trim();
+		String horaInicioTexto = campoHoraInicio.getText().trim();
+		String horaFinTexto = campoHoraFin.getText().trim();
+
+		if (fechaTexto.isEmpty()
+				|| horaInicioTexto.isEmpty()
+				|| horaFinTexto.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Todos los campos son obligatorios.",
+					"Datos incompletos",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		DateTimeFormatter formatoFecha =
+				DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+		DateTimeFormatter formatoHora =
+				DateTimeFormatter.ofPattern("HH:mm");
+
+		LocalDate fecha;
+		LocalTime horaInicio;
+		LocalTime horaFin;
+
+		try {
+
+			fecha = LocalDate.parse(fechaTexto, formatoFecha);
+			horaInicio = LocalTime.parse(horaInicioTexto, formatoHora);
+			horaFin = LocalTime.parse(horaFinTexto, formatoHora);
+
+		} catch (DateTimeParseException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Verifique los formatos ingresados.\n\n"
+							+ "Fecha: dd/MM/yyyy\n"
+							+ "Hora: HH:mm",
+					"Fecha u hora invalida",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		if (fecha.isBefore(LocalDate.now())) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"La fecha de disponibilidad no puede ser anterior a hoy.",
+					"Fecha invalida",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		if (!horaFin.isAfter(horaInicio)) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"La hora de finalizacion debe ser posterior a la hora de inicio.",
+					"Horario invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Disponibilidad disponibilidad = new Disponibilidad(
+				0,
+				fecha,
+				horaInicio,
+				horaFin,
+				0
+		);
+
+		int confirmacion = JOptionPane.showConfirmDialog(
+				null,
+				"¿Desea registrar esta disponibilidad?\n\n"
+						+ "Fecha: " + fechaTexto
+						+ "\nHorario: " + horaInicioTexto
+						+ " - " + horaFinTexto,
+				"Confirmar disponibilidad",
+				JOptionPane.YES_NO_OPTION,
+				JOptionPane.QUESTION_MESSAGE
+		);
+
+		if (confirmacion != JOptionPane.YES_OPTION) {
+			return;
+		}
+
+		ControllerDisponibilidad controllerDisponibilidad =
+				new ControllerDisponibilidad();
+
+		boolean registrada = controllerDisponibilidad.registrar(
+				disponibilidad,
+				profesional.getIdProfesional()
+		);
+
+		if (registrada) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Disponibilidad registrada correctamente.",
+					"Registro exitoso",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+		} else {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudo registrar la disponibilidad.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+		}
+	}
+	
+	
+	
 
 	private void menuSinFunciones(String titulo, String[] opciones) {
 		int opcion;
