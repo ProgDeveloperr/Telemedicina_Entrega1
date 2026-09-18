@@ -170,7 +170,7 @@ public class Usuario implements Menu {
 				break;
 
 			case 2:
-				mostrarPendiente("Modificar datos de paciente");
+				modificarPaciente();
 				break;
 			}
 
@@ -478,6 +478,191 @@ public class Usuario implements Menu {
 	}
 	
 	
+	private void modificarPaciente() {
+
+		String entrada = JOptionPane.showInputDialog(
+				null,
+				"Ingrese el ID del paciente que desea modificar:",
+				"Telemedicina - Modificar paciente",
+				JOptionPane.QUESTION_MESSAGE
+		);
+
+		if (entrada == null) {
+			return;
+		}
+
+		entrada = entrada.trim();
+
+		if (entrada.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Debe ingresar un ID.",
+					"Dato incompleto",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		int idPaciente;
+
+		try {
+
+			idPaciente = Integer.parseInt(entrada);
+
+			if (idPaciente <= 0) {
+
+				JOptionPane.showMessageDialog(
+						null,
+						"El ID debe ser mayor que cero.",
+						"ID invalido",
+						JOptionPane.WARNING_MESSAGE
+				);
+
+				return;
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID debe ser un numero entero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerPaciente controllerPaciente = new ControllerPaciente();
+
+		Paciente pacienteActual = controllerPaciente.buscarPorId(idPaciente);
+
+		if (pacienteActual == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontro un paciente con el ID ingresado.",
+					"Paciente no encontrado",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		JTextField campoDni = new JTextField(pacienteActual.getDni());
+		JTextField campoNombre = new JTextField(pacienteActual.getNombre());
+		JTextField campoApellido = new JTextField(pacienteActual.getApellido());
+		JTextField campoTelefono = new JTextField(pacienteActual.getTelefono());
+
+		Object[] campos = {
+				"DNI:", campoDni,
+				"Nombre:", campoNombre,
+				"Apellido:", campoApellido,
+				"Telefono:", campoTelefono
+		};
+
+		int opcion = JOptionPane.showConfirmDialog(
+				null,
+				campos,
+				"Telemedicina - Modificar paciente",
+				JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE
+		);
+
+		if (opcion != JOptionPane.OK_OPTION) {
+			return;
+		}
+
+		String dni = campoDni.getText().trim();
+		String nombrePaciente = campoNombre.getText().trim();
+		String apellidoPaciente = campoApellido.getText().trim();
+		String telefono = campoTelefono.getText().trim();
+
+		if (dni.isEmpty()
+				|| nombrePaciente.isEmpty()
+				|| apellidoPaciente.isEmpty()
+				|| telefono.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Todos los campos son obligatorios.",
+					"Datos incompletos",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		if (!dni.matches("\\d+")) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El DNI debe contener solamente numeros.",
+					"DNI invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Paciente pacienteConMismoDni = controllerPaciente.buscarPorDni(dni);
+
+		if (pacienteConMismoDni != null
+				&& pacienteConMismoDni.getIdPaciente() != pacienteActual.getIdPaciente()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Ya existe otro paciente registrado con ese DNI.",
+					"DNI existente",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Paciente pacienteModificado = new Paciente(
+				pacienteActual.getIdPaciente(),
+				dni,
+				nombrePaciente,
+				apellidoPaciente,
+				telefono
+		);
+
+		int confirmacion = JOptionPane.showConfirmDialog(
+				null,
+				"¿Desea guardar los cambios del paciente?",
+				"Confirmar modificacion",
+				JOptionPane.YES_NO_OPTION,
+				JOptionPane.QUESTION_MESSAGE
+		);
+
+		if (confirmacion != JOptionPane.YES_OPTION) {
+			return;
+		}
+
+		boolean modificado = controllerPaciente.modificar(pacienteModificado);
+
+		if (modificado) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Datos del paciente actualizados correctamente.",
+					"Modificacion exitosa",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+		} else {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudieron actualizar los datos del paciente.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+		}
+	}
 	
 	
 	private void menuProfesionales() {

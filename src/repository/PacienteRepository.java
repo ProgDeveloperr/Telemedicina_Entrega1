@@ -11,6 +11,8 @@ public interface PacienteRepository {
 	Paciente buscarPorId(int idPaciente);
 
 	Paciente buscarPorDni(String dni);
-	
+
 	LinkedList<Paciente> buscar(String filtro);
+
+	boolean modificar(Paciente paciente);
 }

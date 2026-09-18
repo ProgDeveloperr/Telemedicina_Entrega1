@@ -149,4 +149,31 @@ public class ControllerPaciente implements PacienteRepository {
 	}
 	
 	
+	@Override
+	public boolean modificar(Paciente paciente) {
+
+		String sql = "UPDATE paciente "
+				+ "SET dni = ?, nombre = ?, apellido = ?, telefono = ? "
+				+ "WHERE id_paciente = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setString(1, paciente.getDni());
+			statement.setString(2, paciente.getNombre());
+			statement.setString(3, paciente.getApellido());
+			statement.setString(4, paciente.getTelefono());
+			statement.setInt(5, paciente.getIdPaciente());
+
+			int filasAfectadas = statement.executeUpdate();
+
+			return filasAfectadas > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+	
+	
 }
