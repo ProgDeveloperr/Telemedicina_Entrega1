@@ -6,4 +6,6 @@ public interface UsuarioRepository {
 
 	Usuario login(String nombreUsuario, String clave);
 
+	boolean existeNombreUsuario(String nombreUsuario);
+
 }

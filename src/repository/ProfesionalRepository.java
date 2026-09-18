@@ -9,4 +9,6 @@ public interface ProfesionalRepository {
 
 	boolean registrar(Usuario usuario, Profesional profesional);
 
+	boolean existeMatricula(String matricula);
+
 }

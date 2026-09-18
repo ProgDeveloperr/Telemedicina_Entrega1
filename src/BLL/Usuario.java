@@ -1,9 +1,14 @@
 package BLL;
 
 import java.util.LinkedList;
+
 import javax.swing.JOptionPane;
+import javax.swing.JPasswordField;
 import javax.swing.JTextField;
+
 import DLL.ControllerPaciente;
+import DLL.ControllerProfesional;
+import DLL.ControllerUsuario;
 
 public class Usuario implements Menu {
 
@@ -670,6 +675,7 @@ public class Usuario implements Menu {
 	
 	
 	private void menuProfesionales() {
+
 		String[] opciones = {
 				"Registrar profesional",
 				"Consultar profesionales",
@@ -677,9 +683,182 @@ public class Usuario implements Menu {
 				"Volver"
 		};
 
-		menuSinFunciones("Profesionales", opciones);
-	}
+		int opcion;
 
+		do {
+
+			opcion = JOptionPane.showOptionDialog(
+					null,
+					"Seleccione una opcion",
+					"Telemedicina - Profesionales",
+					JOptionPane.DEFAULT_OPTION,
+					JOptionPane.PLAIN_MESSAGE,
+					null,
+					opciones,
+					opciones[0]
+			);
+
+			switch (opcion) {
+
+			case 0:
+				registrarProfesional();
+				break;
+
+			case 1:
+				mostrarPendiente("Consultar profesionales");
+				break;
+
+			case 2:
+				mostrarPendiente("Consultar disponibilidad de profesionales");
+				break;
+			}
+
+		} while (opcion != 3 && opcion != JOptionPane.CLOSED_OPTION);
+	}
+	
+	
+	
+	private void registrarProfesional() {
+
+		JTextField campoNombre = new JTextField();
+		JTextField campoApellido = new JTextField();
+		JTextField campoUsuario = new JTextField();
+		JPasswordField campoClave = new JPasswordField();
+		JTextField campoMatricula = new JTextField();
+		JTextField campoEspecialidad = new JTextField();
+
+		Object[] campos = {
+				"Nombre:", campoNombre,
+				"Apellido:", campoApellido,
+				"Usuario:", campoUsuario,
+				"Contraseña:", campoClave,
+				"Matricula:", campoMatricula,
+				"Especialidad:", campoEspecialidad
+		};
+
+		int opcion = JOptionPane.showConfirmDialog(
+				null,
+				campos,
+				"Telemedicina - Registrar profesional",
+				JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE
+		);
+
+		if (opcion != JOptionPane.OK_OPTION) {
+			return;
+		}
+
+		String nombreProfesional = campoNombre.getText().trim();
+		String apellidoProfesional = campoApellido.getText().trim();
+		String nombreUsuario = campoUsuario.getText().trim();
+		String clave = new String(campoClave.getPassword());
+		String matricula = campoMatricula.getText().trim();
+		String especialidad = campoEspecialidad.getText().trim();
+
+		if (nombreProfesional.isEmpty()
+				|| apellidoProfesional.isEmpty()
+				|| nombreUsuario.isEmpty()
+				|| clave.isEmpty()
+				|| matricula.isEmpty()
+				|| especialidad.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Todos los campos son obligatorios.",
+					"Datos incompletos",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerUsuario controllerUsuario = new ControllerUsuario();
+
+		if (controllerUsuario.existeNombreUsuario(nombreUsuario)) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Ya existe un usuario con ese nombre de usuario.",
+					"Usuario existente",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerProfesional controllerProfesional =
+				new ControllerProfesional();
+
+		if (controllerProfesional.existeMatricula(matricula)) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Ya existe un profesional con esa matricula.",
+					"Matricula existente",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Usuario usuarioNuevo = new Usuario(
+				0,
+				nombreProfesional,
+				apellidoProfesional,
+				nombreUsuario,
+				clave,
+				TipoUsuario.PROFESIONAL
+		);
+
+		Profesional profesionalNuevo = new Profesional(
+				0,
+				matricula,
+				especialidad
+		);
+
+		int confirmacion = JOptionPane.showConfirmDialog(
+				null,
+				"¿Desea registrar al profesional?\n\n"
+						+ nombreProfesional + " " + apellidoProfesional
+						+ "\nUsuario: " + nombreUsuario
+						+ "\nMatricula: " + matricula
+						+ "\nEspecialidad: " + especialidad,
+				"Confirmar registro",
+				JOptionPane.YES_NO_OPTION,
+				JOptionPane.QUESTION_MESSAGE
+		);
+
+		if (confirmacion != JOptionPane.YES_OPTION) {
+			return;
+		}
+
+		boolean registrado = controllerProfesional.registrar(
+				usuarioNuevo,
+				profesionalNuevo
+		);
+
+		if (registrado) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Profesional registrado correctamente.",
+					"Registro exitoso",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+		} else {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudo registrar el profesional.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+		}
+	}
+	
+		
+	
 	private void menuTurnos() {
 		String[] opciones = {
 				"Asignar turno",

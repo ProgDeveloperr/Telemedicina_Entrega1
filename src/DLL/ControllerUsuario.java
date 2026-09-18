@@ -55,4 +55,29 @@ public class ControllerUsuario implements UsuarioRepository {
 
 		return null;
 	}
+	
+	
+	@Override
+	public boolean existeNombreUsuario(String nombreUsuario) {
+
+		String sql = "SELECT id_usuario "
+				+ "FROM usuario "
+				+ "WHERE nombre_usuario = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setString(1, nombreUsuario);
+
+			try (ResultSet result = statement.executeQuery()) {
+				return result.next();
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+	
+	
 }

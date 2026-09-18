@@ -139,5 +139,28 @@ public class ControllerProfesional implements ProfesionalRepository {
 	}
 	
 	
+	@Override
+	public boolean existeMatricula(String matricula) {
+
+		String sql = "SELECT id_profesional "
+				+ "FROM profesional "
+				+ "WHERE matricula = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setString(1, matricula);
+
+			try (ResultSet result = statement.executeQuery()) {
+				return result.next();
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+	
+	
 	
 }
