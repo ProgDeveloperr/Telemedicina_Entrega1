@@ -51,3 +51,16 @@ CREATE TABLE IF NOT EXISTS paciente (
     apellido VARCHAR(50) NOT NULL,
     telefono VARCHAR(30) NOT NULL
 );
+
+-- Disponibilidad horaria de los profesionales
+
+CREATE TABLE IF NOT EXISTS disponibilidad (
+    id_disponibilidad INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
+    hora_inicio TIME NOT NULL,
+    hora_fin TIME NOT NULL,
+    retraso_estimado INT NOT NULL DEFAULT 0,
+    profesional_id INT NOT NULL,
+    FOREIGN KEY (profesional_id)
+        REFERENCES profesional(id_profesional)
+);
