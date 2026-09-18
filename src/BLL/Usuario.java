@@ -50,6 +50,10 @@ public class Usuario implements Menu {
 		return nombreUsuario;
 	}
 
+	public String getClave() {
+		return clave;
+	}
+	
 	public TipoUsuario getTipoUsuario() {
 		return tipoUsuario;
 	}
