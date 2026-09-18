@@ -1140,7 +1140,7 @@ public class Usuario implements Menu {
 				break;
 
 			case 1:
-				mostrarPendiente("Modificar disponibilidad");
+				modificarDisponibilidad();
 				break;
 			}
 
@@ -1314,7 +1314,285 @@ public class Usuario implements Menu {
 	}
 	
 	
-	
+	private void modificarDisponibilidad() {
+
+		ControllerProfesional controllerProfesional =
+				new ControllerProfesional();
+
+		Profesional profesional =
+				controllerProfesional.obtenerPorUsuario(idUsuario);
+
+		if (profesional == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudieron obtener los datos del profesional.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerDisponibilidad controllerDisponibilidad =
+				new ControllerDisponibilidad();
+
+		LinkedList<Disponibilidad> disponibilidades =
+				controllerDisponibilidad.obtenerPorProfesional(
+						profesional.getIdProfesional()
+				);
+
+		if (disponibilidades.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No tiene disponibilidades registradas.",
+					"Sin disponibilidades",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		DateTimeFormatter formatoFecha =
+				DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+		DateTimeFormatter formatoHora =
+				DateTimeFormatter.ofPattern("HH:mm");
+
+		StringBuilder listado = new StringBuilder();
+
+		for (Disponibilidad disponibilidad : disponibilidades) {
+
+			listado.append("ID: ")
+					.append(disponibilidad.getIdDisponibilidad())
+					.append("\nFecha: ")
+					.append(disponibilidad.getFecha().format(formatoFecha))
+					.append("\nHorario: ")
+					.append(disponibilidad.getHoraInicio().format(formatoHora))
+					.append(" - ")
+					.append(disponibilidad.getHoraFin().format(formatoHora))
+					.append("\n------------------------------\n");
+		}
+
+		String entrada = JOptionPane.showInputDialog(
+				null,
+				listado.toString()
+						+ "\nIngrese el ID de la disponibilidad que desea modificar:",
+				"Telemedicina - Modificar disponibilidad",
+				JOptionPane.QUESTION_MESSAGE
+		);
+
+		if (entrada == null) {
+			return;
+		}
+
+		entrada = entrada.trim();
+
+		if (entrada.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Debe ingresar un ID.",
+					"Dato incompleto",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		int idDisponibilidad;
+
+		try {
+
+			idDisponibilidad = Integer.parseInt(entrada);
+
+			if (idDisponibilidad <= 0) {
+
+				JOptionPane.showMessageDialog(
+						null,
+						"El ID debe ser mayor que cero.",
+						"ID invalido",
+						JOptionPane.WARNING_MESSAGE
+				);
+
+				return;
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID debe ser un numero entero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Disponibilidad disponibilidadActual =
+				controllerDisponibilidad.buscarPorId(
+						idDisponibilidad,
+						profesional.getIdProfesional()
+				);
+
+		if (disponibilidadActual == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontro una disponibilidad propia con el ID ingresado.",
+					"Disponibilidad no encontrada",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		JTextField campoFecha = new JTextField(
+				disponibilidadActual.getFecha().format(formatoFecha)
+		);
+
+		JTextField campoHoraInicio = new JTextField(
+				disponibilidadActual.getHoraInicio().format(formatoHora)
+		);
+
+		JTextField campoHoraFin = new JTextField(
+				disponibilidadActual.getHoraFin().format(formatoHora)
+		);
+
+		Object[] campos = {
+				"Fecha (dd/MM/yyyy):", campoFecha,
+				"Hora inicio (HH:mm):", campoHoraInicio,
+				"Hora fin (HH:mm):", campoHoraFin
+		};
+
+		int opcion = JOptionPane.showConfirmDialog(
+				null,
+				campos,
+				"Telemedicina - Modificar disponibilidad",
+				JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE
+		);
+
+		if (opcion != JOptionPane.OK_OPTION) {
+			return;
+		}
+
+		String fechaTexto = campoFecha.getText().trim();
+		String horaInicioTexto = campoHoraInicio.getText().trim();
+		String horaFinTexto = campoHoraFin.getText().trim();
+
+		if (fechaTexto.isEmpty()
+				|| horaInicioTexto.isEmpty()
+				|| horaFinTexto.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Todos los campos son obligatorios.",
+					"Datos incompletos",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		LocalDate fecha;
+		LocalTime horaInicio;
+		LocalTime horaFin;
+
+		try {
+
+			fecha = LocalDate.parse(fechaTexto, formatoFecha);
+			horaInicio = LocalTime.parse(horaInicioTexto, formatoHora);
+			horaFin = LocalTime.parse(horaFinTexto, formatoHora);
+
+		} catch (DateTimeParseException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Verifique los formatos ingresados.\n\n"
+							+ "Fecha: dd/MM/yyyy\n"
+							+ "Hora: HH:mm",
+					"Fecha u hora invalida",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		if (fecha.isBefore(LocalDate.now())) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"La fecha de disponibilidad no puede ser anterior a hoy.",
+					"Fecha invalida",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		if (!horaFin.isAfter(horaInicio)) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"La hora de finalizacion debe ser posterior a la hora de inicio.",
+					"Horario invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Disponibilidad disponibilidadModificada =
+				new Disponibilidad(
+						disponibilidadActual.getIdDisponibilidad(),
+						fecha,
+						horaInicio,
+						horaFin,
+						disponibilidadActual.getRetrasoEstimado()
+				);
+
+		int confirmacion = JOptionPane.showConfirmDialog(
+				null,
+				"¿Desea guardar los cambios?\n\n"
+						+ "Fecha: " + fechaTexto
+						+ "\nHorario: " + horaInicioTexto
+						+ " - " + horaFinTexto,
+				"Confirmar modificacion",
+				JOptionPane.YES_NO_OPTION,
+				JOptionPane.QUESTION_MESSAGE
+		);
+
+		if (confirmacion != JOptionPane.YES_OPTION) {
+			return;
+		}
+
+		boolean modificada = controllerDisponibilidad.modificar(
+				disponibilidadModificada,
+				profesional.getIdProfesional()
+		);
+
+		if (modificada) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Disponibilidad actualizada correctamente.",
+					"Modificacion exitosa",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+		} else {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudo actualizar la disponibilidad.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+		}
+	}
 
 	private void menuSinFunciones(String titulo, String[] opciones) {
 		int opcion;

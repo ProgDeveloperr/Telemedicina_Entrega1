@@ -10,4 +10,8 @@ public interface DisponibilidadRepository {
 
 	LinkedList<Disponibilidad> obtenerPorProfesional(int idProfesional);
 
+	Disponibilidad buscarPorId(int idDisponibilidad, int idProfesional);
+
+	boolean modificar(Disponibilidad disponibilidad, int idProfesional);
+
 }

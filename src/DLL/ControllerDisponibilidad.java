@@ -95,4 +95,89 @@ public class ControllerDisponibilidad implements DisponibilidadRepository {
 
 		return disponibilidades;
 	}
+	
+	
+	@Override
+	public Disponibilidad buscarPorId(
+			int idDisponibilidad,
+			int idProfesional) {
+
+		String sql = "SELECT id_disponibilidad, fecha, hora_inicio, "
+				+ "hora_fin, retraso_estimado "
+				+ "FROM disponibilidad "
+				+ "WHERE id_disponibilidad = ? "
+				+ "AND profesional_id = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setInt(1, idDisponibilidad);
+			statement.setInt(2, idProfesional);
+
+			try (ResultSet result = statement.executeQuery()) {
+
+				if (result.next()) {
+
+					return new Disponibilidad(
+							result.getInt("id_disponibilidad"),
+							result.getDate("fecha").toLocalDate(),
+							result.getTime("hora_inicio").toLocalTime(),
+							result.getTime("hora_fin").toLocalTime(),
+							result.getInt("retraso_estimado")
+					);
+				}
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+	
+	@Override
+	public boolean modificar(
+			Disponibilidad disponibilidad,
+			int idProfesional) {
+
+		String sql = "UPDATE disponibilidad "
+				+ "SET fecha = ?, hora_inicio = ?, hora_fin = ? "
+				+ "WHERE id_disponibilidad = ? "
+				+ "AND profesional_id = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setDate(
+					1,
+					Date.valueOf(disponibilidad.getFecha())
+			);
+
+			statement.setTime(
+					2,
+					Time.valueOf(disponibilidad.getHoraInicio())
+			);
+
+			statement.setTime(
+					3,
+					Time.valueOf(disponibilidad.getHoraFin())
+			);
+
+			statement.setInt(
+					4,
+					disponibilidad.getIdDisponibilidad()
+			);
+
+			statement.setInt(5, idProfesional);
+
+			int filasAfectadas = statement.executeUpdate();
+
+			return filasAfectadas > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+	
+	
 }
