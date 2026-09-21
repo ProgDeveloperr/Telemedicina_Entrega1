@@ -25,3 +25,7 @@ replay_pid*
 
 # Eclipse build output
 /bin/
+
+# Librerias necesarias del proyecto Telemedicina
+!lib/
+!lib/*.jar
