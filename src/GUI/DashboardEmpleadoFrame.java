@@ -207,9 +207,7 @@ public class DashboardEmpleadoFrame extends JFrame {
 		);
 
 		botonConsultas.addActionListener(
-				e -> mostrarModuloPendiente(
-						"Consultas e informacion"
-				)
+				e -> abrirConsultasInformacion()
 		);
 
 		botonCerrarSesion.addActionListener(
@@ -285,6 +283,17 @@ public class DashboardEmpleadoFrame extends JFrame {
 				new TurnosFrame(this);
 
 		turnosFrame.setVisible(true);
+	}
+
+	
+	private void abrirConsultasInformacion() {
+
+		setVisible(false);
+
+		ConsultasInformacionFrame consultasFrame =
+				new ConsultasInformacionFrame(this);
+
+		consultasFrame.setVisible(true);
 	}
 	
 }
