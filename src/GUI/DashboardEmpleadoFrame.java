@@ -199,9 +199,7 @@ public class DashboardEmpleadoFrame extends JFrame {
 		);
 
 		botonProfesionales.addActionListener(
-				e -> mostrarModuloPendiente(
-						"Profesionales"
-				)
+				e -> abrirProfesionales()
 		);
 
 		botonTurnos.addActionListener(
@@ -265,5 +263,19 @@ public class DashboardEmpleadoFrame extends JFrame {
 
 		pacientesFrame.setVisible(true);
 	}
+	
+	
+	
+	private void abrirProfesionales() {
+
+		setVisible(false);
+
+		ProfesionalesFrame profesionalesFrame =
+				new ProfesionalesFrame(this);
+
+		profesionalesFrame.setVisible(true);
+	}
+	
+	
 	
 }
