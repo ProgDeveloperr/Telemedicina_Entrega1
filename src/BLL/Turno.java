@@ -1,4 +1,5 @@
 package BLL;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -11,8 +12,14 @@ public class Turno {
 	private Paciente paciente;
 	private Disponibilidad disponibilidad;
 
-	public Turno(int idTurno, LocalDate fecha, LocalTime hora, EstadoTurno estado, Paciente paciente,
+	public Turno(
+			int idTurno,
+			LocalDate fecha,
+			LocalTime hora,
+			EstadoTurno estado,
+			Paciente paciente,
 			Disponibilidad disponibilidad) {
+
 		this.idTurno = idTurno;
 		this.fecha = fecha;
 		this.hora = hora;
@@ -21,21 +28,55 @@ public class Turno {
 		this.disponibilidad = disponibilidad;
 	}
 
-	// Metodos declarados como base. No implementan logica en la Entrega 1.
+	public int getIdTurno() {
+		return idTurno;
+	}
+
+	public LocalDate getFecha() {
+		return fecha;
+	}
+
+	public LocalTime getHora() {
+		return hora;
+	}
+
+	public EstadoTurno getEstado() {
+		return estado;
+	}
+
+	public Paciente getPaciente() {
+		return paciente;
+	}
+
+	public Disponibilidad getDisponibilidad() {
+		return disponibilidad;
+	}
+
 	public void confirmar() {
+		estado = EstadoTurno.CONFIRMADO;
 	}
 
 	public void cancelar() {
+		estado = EstadoTurno.CANCELADO;
 	}
 
 	public void marcarLlegada() {
+		estado = EstadoTurno.PRESENTE;
 	}
 
-	public boolean estaCancelado() {
-		return false;
+	public boolean estaPendiente() {
+		return estado == EstadoTurno.PENDIENTE;
 	}
 
 	public boolean estaConfirmado() {
-		return false;
+		return estado == EstadoTurno.CONFIRMADO;
+	}
+
+	public boolean estaCancelado() {
+		return estado == EstadoTurno.CANCELADO;
+	}
+
+	public boolean estaPresente() {
+		return estado == EstadoTurno.PRESENTE;
 	}
 }

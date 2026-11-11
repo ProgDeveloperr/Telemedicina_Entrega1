@@ -193,3 +193,33 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+
+
+-- Turnos asignados a pacientes dentro de una disponibilidad profesional
+
+CREATE TABLE IF NOT EXISTS turno (
+    id_turno INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
+    hora TIME NOT NULL,
+    estado ENUM(
+        'PENDIENTE',
+        'CONFIRMADO',
+        'CANCELADO',
+        'PRESENTE'
+    ) NOT NULL DEFAULT 'PENDIENTE',
+
+    paciente_id INT NOT NULL,
+    disponibilidad_id INT NOT NULL,
+
+    CONSTRAINT fk_turno_paciente
+        FOREIGN KEY (paciente_id)
+        REFERENCES paciente(id_paciente),
+
+    CONSTRAINT fk_turno_disponibilidad
+        FOREIGN KEY (disponibilidad_id)
+        REFERENCES disponibilidad(id_disponibilidad),
+
+    CONSTRAINT uq_turno_disponibilidad_hora
+        UNIQUE (disponibilidad_id, hora)
+);
