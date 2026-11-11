@@ -195,9 +195,7 @@ public class DashboardEmpleadoFrame extends JFrame {
 		 * uno por uno a JFrame.
 		 */
 		botonPacientes.addActionListener(
-				e -> mostrarModuloPendiente(
-						"Pacientes"
-				)
+				e -> abrirPacientes()
 		);
 
 		botonProfesionales.addActionListener(
@@ -258,4 +256,14 @@ public class DashboardEmpleadoFrame extends JFrame {
 
 		login.setVisible(true);
 	}
+	private void abrirPacientes() {
+
+		setVisible(false);
+
+		PacientesFrame pacientesFrame =
+				new PacientesFrame(this);
+
+		pacientesFrame.setVisible(true);
+	}
+	
 }
