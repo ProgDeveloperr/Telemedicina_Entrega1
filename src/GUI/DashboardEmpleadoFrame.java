@@ -203,9 +203,7 @@ public class DashboardEmpleadoFrame extends JFrame {
 		);
 
 		botonTurnos.addActionListener(
-				e -> mostrarModuloPendiente(
-						"Turnos"
-				)
+				e -> abrirTurnos()
 		);
 
 		botonConsultas.addActionListener(
@@ -277,5 +275,16 @@ public class DashboardEmpleadoFrame extends JFrame {
 	}
 	
 	
+	
+	
+	private void abrirTurnos() {
+
+		setVisible(false);
+
+		TurnosFrame turnosFrame =
+				new TurnosFrame(this);
+
+		turnosFrame.setVisible(true);
+	}
 	
 }
