@@ -1332,7 +1332,7 @@ public class Usuario implements Menu {
 				break;
 
 			case 5:
-				mostrarPendiente("Registrar llegada del paciente");
+				registrarLlegadaPaciente();
 				break;
 			}
 
@@ -2262,6 +2262,215 @@ public class Usuario implements Menu {
 			);
 		}
 	}
+	
+	
+	
+	
+	
+	private void registrarLlegadaPaciente() {
+
+		ControllerTurno controllerTurno =
+				new ControllerTurno();
+
+		LinkedList<Turno> turnos =
+				controllerTurno.obtenerTodos();
+
+		if (turnos.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No hay turnos registrados.",
+					"Sin turnos",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		DateTimeFormatter formatoFecha =
+				DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+		DateTimeFormatter formatoHora =
+				DateTimeFormatter.ofPattern("HH:mm");
+
+		StringBuilder listado =
+				new StringBuilder();
+
+		int cantidadConfirmados = 0;
+
+		for (Turno turno : turnos) {
+
+			if (turno.estaConfirmado()) {
+
+				listado.append("ID: ")
+						.append(turno.getIdTurno())
+						.append(" | ")
+						.append(turno.getPaciente().getNombre())
+						.append(" ")
+						.append(turno.getPaciente().getApellido())
+						.append(" | ")
+						.append(turno.getFecha().format(formatoFecha))
+						.append(" ")
+						.append(turno.getHora().format(formatoHora))
+						.append(" | ")
+						.append(turno.getEstado())
+						.append("\n");
+
+				cantidadConfirmados++;
+			}
+		}
+
+		if (cantidadConfirmados == 0) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No hay turnos confirmados para registrar llegada.",
+					"Sin turnos confirmados",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		String entrada =
+				JOptionPane.showInputDialog(
+						null,
+						listado.toString()
+								+ "\nIngrese el ID del turno:",
+						"Telemedicina - Registrar llegada",
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (entrada == null) {
+			return;
+		}
+
+		int idTurno;
+
+		try {
+
+			idTurno = Integer.parseInt(
+					entrada.trim()
+			);
+
+			if (idTurno <= 0) {
+				throw new NumberFormatException();
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID del turno debe ser un numero entero mayor que cero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Turno turno =
+				controllerTurno.buscarPorId(idTurno);
+
+		if (turno == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontro el turno seleccionado.",
+					"Turno no encontrado",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		if (turno.estaCancelado()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se puede registrar llegada en un turno cancelado.",
+					"Turno no valido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		if (turno.estaPendiente()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El turno debe estar confirmado antes de registrar la llegada.",
+					"Turno pendiente",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		if (turno.estaPresente()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"La llegada del paciente ya se encuentra registrada.",
+					"Llegada ya registrada",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		int confirmacion =
+				JOptionPane.showConfirmDialog(
+						null,
+						"¿Desea registrar la llegada del paciente?\n\n"
+								+ "Paciente: "
+								+ turno.getPaciente().getNombre()
+								+ " "
+								+ turno.getPaciente().getApellido()
+								+ "\nFecha: "
+								+ turno.getFecha().format(formatoFecha)
+								+ "\nHora: "
+								+ turno.getHora().format(formatoHora),
+						"Confirmar llegada",
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (confirmacion != JOptionPane.YES_OPTION) {
+			return;
+		}
+
+		boolean llegadaRegistrada =
+				controllerTurno.actualizarEstado(
+						turno.getIdTurno(),
+						EstadoTurno.PRESENTE
+				);
+
+		if (llegadaRegistrada) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Llegada del paciente registrada correctamente.",
+					"Registro exitoso",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+		} else {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudo registrar la llegada del paciente.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+		}
+	}
+	
+	
+	
+
+	
 	
 	
 	private void asignarTurno() {
