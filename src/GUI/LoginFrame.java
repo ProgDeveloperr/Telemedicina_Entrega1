@@ -248,6 +248,28 @@ public class LoginFrame extends JFrame {
 
 		dispose();
 
-		logueado.MenuPrincipal();
+		switch (logueado.getTipoUsuario()) {
+
+		case EMPLEADO:
+
+			DashboardEmpleadoFrame dashboard =
+					new DashboardEmpleadoFrame(
+							logueado
+					);
+
+			dashboard.setVisible(true);
+
+			break;
+
+		case PROFESIONAL:
+
+			/*
+			 * El dashboard profesional se migrara
+			 * en el siguiente bloque.
+			 */
+			logueado.MenuPrincipal();
+
+			break;
+		}
 	}
 }
