@@ -218,18 +218,7 @@ public class DashboardProfesionalFrame extends JFrame {
 		);
 	}
 
-	private void mostrarModuloPendiente(
-			String modulo) {
-
-		JOptionPane.showMessageDialog(
-				this,
-				"El modulo "
-						+ modulo
-						+ " sera migrado a JFrame en el siguiente paso.",
-				"Telemedicina",
-				JOptionPane.INFORMATION_MESSAGE
-		);
-	}
+	
 
 	private void cerrarSesion() {
 

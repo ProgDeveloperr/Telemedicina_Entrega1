@@ -190,10 +190,7 @@ public class DashboardEmpleadoFrame extends JFrame {
 				BorderLayout.SOUTH
 		);
 
-		/*
-		 * Por ahora los modulos se migraran
-		 * uno por uno a JFrame.
-		 */
+		
 		botonPacientes.addActionListener(
 				e -> abrirPacientes()
 		);
@@ -215,18 +212,7 @@ public class DashboardEmpleadoFrame extends JFrame {
 		);
 	}
 
-	private void mostrarModuloPendiente(
-			String modulo) {
-
-		JOptionPane.showMessageDialog(
-				this,
-				"El modulo "
-						+ modulo
-						+ " sera migrado a JFrame en el siguiente paso.",
-				"Telemedicina",
-				JOptionPane.INFORMATION_MESSAGE
-		);
-	}
+	
 
 	private void cerrarSesion() {
 

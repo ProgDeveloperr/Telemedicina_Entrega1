@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 19-09-2026 a las 20:24:42
+-- Tiempo de generación: 11-11-2026 a las 08:11:32
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -20,6 +20,28 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `telemedicina`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `consulta`
+--
+
+CREATE TABLE `consulta` (
+  `id_consulta` int(11) NOT NULL,
+  `fecha_hora_atencion` datetime NOT NULL,
+  `observaciones` text NOT NULL,
+  `seguimiento` text DEFAULT NULL,
+  `turno_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `consulta`
+--
+
+INSERT INTO `consulta` (`id_consulta`, `fecha_hora_atencion`, `observaciones`, `seguimiento`, `turno_id`) VALUES
+(1, '2026-11-10 23:46:12', 'Paciente presenta evolucion favorable.', 'Control en 15 dias.', 3),
+(2, '2026-11-11 03:56:16', 'Paciente se encuentra estable y presenta buena evolucion.', 'Control de seguimiento en 30 dias.', 4);
 
 -- --------------------------------------------------------
 
@@ -41,7 +63,9 @@ CREATE TABLE `disponibilidad` (
 --
 
 INSERT INTO `disponibilidad` (`id_disponibilidad`, `fecha`, `hora_inicio`, `hora_fin`, `retraso_estimado`, `profesional_id`) VALUES
-(1, '2026-09-20', '10:00:00', '14:00:00', 0, 2);
+(1, '2026-09-20', '10:00:00', '14:00:00', 0, 2),
+(2, '2026-11-12', '10:00:00', '14:00:00', 30, 2),
+(3, '2026-11-13', '09:30:00', '12:00:00', 15, 2);
 
 -- --------------------------------------------------------
 
@@ -85,7 +109,33 @@ CREATE TABLE `profesional` (
 INSERT INTO `profesional` (`id_profesional`, `matricula`, `especialidad`, `usuario_id`) VALUES
 (1, 'MP12345', 'Medicina General', 2),
 (2, 'MP67890', 'Pediatria', 3),
-(3, 'MP24680', 'Cardiologia', 4);
+(3, 'MP24680', 'Cardiologia', 4),
+(4, 'MPTEST01', 'clinica', 5);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `turno`
+--
+
+CREATE TABLE `turno` (
+  `id_turno` int(11) NOT NULL,
+  `fecha` date NOT NULL,
+  `hora` time NOT NULL,
+  `estado` enum('PENDIENTE','CONFIRMADO','CANCELADO','PRESENTE') NOT NULL DEFAULT 'PENDIENTE',
+  `paciente_id` int(11) NOT NULL,
+  `disponibilidad_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `turno`
+--
+
+INSERT INTO `turno` (`id_turno`, `fecha`, `hora`, `estado`, `paciente_id`, `disponibilidad_id`) VALUES
+(1, '2026-11-12', '10:30:00', 'CANCELADO', 1, 2),
+(2, '2026-11-12', '13:00:00', 'CANCELADO', 2, 2),
+(3, '2026-11-12', '13:00:00', 'PRESENTE', 2, 2),
+(4, '2026-11-12', '12:00:00', 'PRESENTE', 1, 2);
 
 -- --------------------------------------------------------
 
@@ -110,11 +160,19 @@ INSERT INTO `usuario` (`id_usuario`, `nombre`, `apellido`, `nombre_usuario`, `cl
 (1, 'Joaquin', 'Gonzalez Garcia', 'recepcion', '$2a$10$seYXgwBRrwUr/Mq9XORPOOlk0nma.avTe9PSHJkUmgxJv6x1uAxsq', 'EMPLEADO'),
 (2, 'Carlos', 'Medico', 'doctor', '$2a$10$PW29dhJTQosw9AY1weV1buOQkFDOT6xyCnV/M7gCBGVGI/Z.NvxdO', 'PROFESIONAL'),
 (3, 'Laura', 'Gomez', 'laura', '$2a$10$yzmFnVoxoxLb9VB.KM6gquElqEIiX5ZL4aMDxk3YxaPVVQDnWSFsq', 'PROFESIONAL'),
-(4, 'Martin', 'Diaz', 'martin', '$2a$10$/gPvEiWw75MLWVrwYD5NFe1d8i7ZWJ4aZt/6fI3wDL72/jgWnaYau', 'PROFESIONAL');
+(4, 'Martin', 'Diaz', 'martin', '$2a$10$/gPvEiWw75MLWVrwYD5NFe1d8i7ZWJ4aZt/6fI3wDL72/jgWnaYau', 'PROFESIONAL'),
+(5, 'test', 'medico', 'testmedico', '$2a$10$2W7Gd5ua.x1GReuDoZOPXOZwmcGQRL9AKj/bO4pv2azv49oCotBv6', 'PROFESIONAL');
 
 --
 -- Índices para tablas volcadas
 --
+
+--
+-- Indices de la tabla `consulta`
+--
+ALTER TABLE `consulta`
+  ADD PRIMARY KEY (`id_consulta`),
+  ADD UNIQUE KEY `turno_id` (`turno_id`);
 
 --
 -- Indices de la tabla `disponibilidad`
@@ -139,6 +197,14 @@ ALTER TABLE `profesional`
   ADD UNIQUE KEY `usuario_id` (`usuario_id`);
 
 --
+-- Indices de la tabla `turno`
+--
+ALTER TABLE `turno`
+  ADD PRIMARY KEY (`id_turno`),
+  ADD KEY `fk_turno_paciente` (`paciente_id`),
+  ADD KEY `idx_turno_disponibilidad_hora` (`disponibilidad_id`,`hora`);
+
+--
 -- Indices de la tabla `usuario`
 --
 ALTER TABLE `usuario`
@@ -150,32 +216,50 @@ ALTER TABLE `usuario`
 --
 
 --
+-- AUTO_INCREMENT de la tabla `consulta`
+--
+ALTER TABLE `consulta`
+  MODIFY `id_consulta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT de la tabla `disponibilidad`
 --
 ALTER TABLE `disponibilidad`
-  MODIFY `id_disponibilidad` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_disponibilidad` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `paciente`
 --
 ALTER TABLE `paciente`
-  MODIFY `id_paciente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_paciente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `profesional`
 --
 ALTER TABLE `profesional`
-  MODIFY `id_profesional` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_profesional` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT de la tabla `turno`
+--
+ALTER TABLE `turno`
+  MODIFY `id_turno` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Restricciones para tablas volcadas
 --
+
+--
+-- Filtros para la tabla `consulta`
+--
+ALTER TABLE `consulta`
+  ADD CONSTRAINT `fk_consulta_turno` FOREIGN KEY (`turno_id`) REFERENCES `turno` (`id_turno`);
 
 --
 -- Filtros para la tabla `disponibilidad`
@@ -188,54 +272,15 @@ ALTER TABLE `disponibilidad`
 --
 ALTER TABLE `profesional`
   ADD CONSTRAINT `profesional_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id_usuario`);
+
+--
+-- Filtros para la tabla `turno`
+--
+ALTER TABLE `turno`
+  ADD CONSTRAINT `fk_turno_disponibilidad` FOREIGN KEY (`disponibilidad_id`) REFERENCES `disponibilidad` (`id_disponibilidad`),
+  ADD CONSTRAINT `fk_turno_paciente` FOREIGN KEY (`paciente_id`) REFERENCES `paciente` (`id_paciente`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-
-
-
--- Turnos asignados a pacientes dentro de una disponibilidad profesional
-
-CREATE TABLE IF NOT EXISTS turno (
-    id_turno INT AUTO_INCREMENT PRIMARY KEY,
-    fecha DATE NOT NULL,
-    hora TIME NOT NULL,
-    estado ENUM(
-        'PENDIENTE',
-        'CONFIRMADO',
-        'CANCELADO',
-        'PRESENTE'
-    ) NOT NULL DEFAULT 'PENDIENTE',
-
-    paciente_id INT NOT NULL,
-    disponibilidad_id INT NOT NULL,
-
-    CONSTRAINT fk_turno_paciente
-        FOREIGN KEY (paciente_id)
-        REFERENCES paciente(id_paciente),
-
-    CONSTRAINT fk_turno_disponibilidad
-        FOREIGN KEY (disponibilidad_id)
-        REFERENCES disponibilidad(id_disponibilidad),
-
-    INDEX idx_turno_disponibilidad_hora (disponibilidad_id, hora)
-);
-
-
-
-
--- Consultas medicas realizadas a partir de un turno
-
-CREATE TABLE IF NOT EXISTS consulta (
-    id_consulta INT AUTO_INCREMENT PRIMARY KEY,
-    fecha_hora_atencion DATETIME NOT NULL,
-    observaciones TEXT NOT NULL,
-    seguimiento TEXT NULL,
-    turno_id INT NOT NULL UNIQUE,
-
-    CONSTRAINT fk_consulta_turno
-        FOREIGN KEY (turno_id)
-        REFERENCES turno(id_turno)
-);
