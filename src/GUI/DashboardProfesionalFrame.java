@@ -206,9 +206,7 @@ public class DashboardProfesionalFrame extends JFrame {
 		);
 
 		botonConsulta.addActionListener(
-				e -> mostrarModuloPendiente(
-						"Registrar consulta realizada"
-				)
+				e -> abrirRegistrarConsulta()
 		);
 
 		botonHistorial.addActionListener(
@@ -305,7 +303,18 @@ public class DashboardProfesionalFrame extends JFrame {
 	}
 	
 	
-	
+	private void abrirRegistrarConsulta() {
+
+		setVisible(false);
+
+		RegistrarConsultaFrame consultaFrame =
+				new RegistrarConsultaFrame(
+						this,
+						usuario
+				);
+
+		consultaFrame.setVisible(true);
+	}
 	
 	
 	
