@@ -1320,7 +1320,7 @@ public class Usuario implements Menu {
 				break;
 
 			case 2:
-				mostrarPendiente("Modificar turno");
+				modificarTurno();
 				break;
 
 			case 3:
@@ -1416,6 +1416,455 @@ public class Usuario implements Menu {
 		);
 	}
 	
+	
+	
+	private void modificarTurno() {
+
+		ControllerTurno controllerTurno =
+				new ControllerTurno();
+
+		LinkedList<Turno> turnos =
+				controllerTurno.obtenerTodos();
+
+		if (turnos.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No hay turnos registrados.",
+					"Sin turnos",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		DateTimeFormatter formatoFecha =
+				DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+		DateTimeFormatter formatoHora =
+				DateTimeFormatter.ofPattern("HH:mm");
+
+		StringBuilder listadoTurnos =
+				new StringBuilder();
+
+		for (Turno turno : turnos) {
+
+			listadoTurnos
+					.append("ID: ")
+					.append(turno.getIdTurno())
+					.append(" | ")
+					.append(turno.getPaciente().getNombre())
+					.append(" ")
+					.append(turno.getPaciente().getApellido())
+					.append(" | ")
+					.append(turno.getFecha().format(formatoFecha))
+					.append(" ")
+					.append(turno.getHora().format(formatoHora))
+					.append(" | ")
+					.append(turno.getEstado())
+					.append("\n");
+		}
+
+		String entradaTurno =
+				JOptionPane.showInputDialog(
+						null,
+						listadoTurnos.toString()
+								+ "\nIngrese el ID del turno que desea modificar:",
+						"Telemedicina - Modificar turno",
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (entradaTurno == null) {
+			return;
+		}
+
+		entradaTurno = entradaTurno.trim();
+
+		int idTurno;
+
+		try {
+
+			idTurno = Integer.parseInt(entradaTurno);
+
+			if (idTurno <= 0) {
+				throw new NumberFormatException();
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID del turno debe ser un numero entero mayor que cero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Turno turnoActual =
+				controllerTurno.buscarPorId(idTurno);
+
+		if (turnoActual == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontro el turno seleccionado.",
+					"Turno no encontrado",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		if (turnoActual.estaCancelado()
+				|| turnoActual.estaPresente()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se puede modificar un turno cancelado o con llegada registrada.",
+					"Turno no modificable",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerProfesional controllerProfesional =
+				new ControllerProfesional();
+
+		LinkedList<Profesional> profesionales =
+				controllerProfesional.buscar("");
+
+		StringBuilder listadoProfesionales =
+				new StringBuilder();
+
+		for (Profesional profesional : profesionales) {
+
+			Usuario usuarioProfesional =
+					controllerProfesional
+							.obtenerUsuarioPorProfesional(
+									profesional.getIdProfesional()
+							);
+
+			if (usuarioProfesional != null) {
+
+				listadoProfesionales
+						.append("ID: ")
+						.append(profesional.getIdProfesional())
+						.append(" | ")
+						.append(usuarioProfesional.getNombre())
+						.append(" ")
+						.append(usuarioProfesional.getApellido())
+						.append(" | ")
+						.append(profesional.getEspecialidad())
+						.append("\n");
+			}
+		}
+
+		String entradaProfesional =
+				JOptionPane.showInputDialog(
+						null,
+						"Turno actual:\n"
+								+ turnoActual.getPaciente().getNombre()
+								+ " "
+								+ turnoActual.getPaciente().getApellido()
+								+ "\n"
+								+ turnoActual.getFecha().format(formatoFecha)
+								+ " "
+								+ turnoActual.getHora().format(formatoHora)
+								+ "\n\n"
+								+ listadoProfesionales.toString()
+								+ "\nIngrese el ID del profesional:",
+						"Telemedicina - Modificar turno",
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (entradaProfesional == null) {
+			return;
+		}
+
+		int idProfesional;
+
+		try {
+
+			idProfesional =
+					Integer.parseInt(
+							entradaProfesional.trim()
+					);
+
+			if (idProfesional <= 0) {
+				throw new NumberFormatException();
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID del profesional debe ser un numero entero mayor que cero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Profesional profesional =
+				controllerProfesional.buscarPorId(
+						idProfesional
+				);
+
+		if (profesional == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontro el profesional seleccionado.",
+					"Profesional no encontrado",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerDisponibilidad controllerDisponibilidad =
+				new ControllerDisponibilidad();
+
+		LinkedList<Disponibilidad> disponibilidades =
+				controllerDisponibilidad
+						.obtenerPorProfesional(
+								idProfesional
+						);
+
+		StringBuilder listadoDisponibilidades =
+				new StringBuilder();
+
+		for (Disponibilidad disponibilidad : disponibilidades) {
+
+			if (!disponibilidad.getFecha()
+					.isBefore(LocalDate.now())) {
+
+				listadoDisponibilidades
+						.append("ID: ")
+						.append(
+								disponibilidad.getIdDisponibilidad()
+						)
+						.append(" | ")
+						.append(
+								disponibilidad.getFecha()
+										.format(formatoFecha)
+						)
+						.append(" | ")
+						.append(
+								disponibilidad.getHoraInicio()
+										.format(formatoHora)
+						)
+						.append(" - ")
+						.append(
+								disponibilidad.getHoraFin()
+										.format(formatoHora)
+						)
+						.append("\n");
+			}
+		}
+
+		if (listadoDisponibilidades.length() == 0) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El profesional no tiene disponibilidades futuras.",
+					"Sin disponibilidad",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		String entradaDisponibilidad =
+				JOptionPane.showInputDialog(
+						null,
+						listadoDisponibilidades.toString()
+								+ "\nIngrese el ID de la nueva disponibilidad:",
+						"Telemedicina - Modificar turno",
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (entradaDisponibilidad == null) {
+			return;
+		}
+
+		int idDisponibilidad;
+
+		try {
+
+			idDisponibilidad =
+					Integer.parseInt(
+							entradaDisponibilidad.trim()
+					);
+
+			if (idDisponibilidad <= 0) {
+				throw new NumberFormatException();
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID de disponibilidad debe ser un numero entero mayor que cero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Disponibilidad disponibilidad =
+				controllerDisponibilidad.buscarPorId(
+						idDisponibilidad,
+						idProfesional
+				);
+
+		if (disponibilidad == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"La disponibilidad seleccionada no es valida.",
+					"Disponibilidad invalida",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		String horaTexto =
+				JOptionPane.showInputDialog(
+						null,
+						"Disponibilidad:\n"
+								+ disponibilidad.getFecha()
+										.format(formatoFecha)
+								+ "\n"
+								+ disponibilidad.getHoraInicio()
+										.format(formatoHora)
+								+ " - "
+								+ disponibilidad.getHoraFin()
+										.format(formatoHora)
+								+ "\n\nIngrese la nueva hora (HH:mm):",
+						"Telemedicina - Modificar turno",
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (horaTexto == null) {
+			return;
+		}
+
+		LocalTime nuevaHora;
+
+		try {
+
+			nuevaHora = LocalTime.parse(
+					horaTexto.trim(),
+					formatoHora
+			);
+
+		} catch (DateTimeParseException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"La hora debe tener formato HH:mm.",
+					"Hora invalida",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		if (!disponibilidad.esHorarioValido(
+				nuevaHora)) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El horario ingresado se encuentra fuera de la disponibilidad del profesional.",
+					"Horario invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		if (controllerTurno
+				.horarioOcupadoExceptoTurno(
+						idDisponibilidad,
+						nuevaHora,
+						turnoActual.getIdTurno()
+				)) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El horario seleccionado ya se encuentra ocupado por otro turno.",
+					"Horario ocupado",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Turno turnoModificado =
+				new Turno(
+						turnoActual.getIdTurno(),
+						disponibilidad.getFecha(),
+						nuevaHora,
+						turnoActual.getEstado(),
+						turnoActual.getPaciente(),
+						disponibilidad
+				);
+
+		int confirmacion =
+				JOptionPane.showConfirmDialog(
+						null,
+						"¿Desea guardar los cambios?\n\n"
+								+ "Paciente: "
+								+ turnoActual.getPaciente().getNombre()
+								+ " "
+								+ turnoActual.getPaciente().getApellido()
+								+ "\nFecha: "
+								+ disponibilidad.getFecha()
+										.format(formatoFecha)
+								+ "\nHora: "
+								+ nuevaHora.format(formatoHora)
+								+ "\nEstado: "
+								+ turnoActual.getEstado(),
+						"Confirmar modificacion",
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (confirmacion != JOptionPane.YES_OPTION) {
+			return;
+		}
+
+		boolean modificado =
+				controllerTurno.modificar(
+						turnoModificado
+				);
+
+		if (modificado) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Turno modificado correctamente.",
+					"Modificacion exitosa",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+		} else {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudo modificar el turno.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+		}
+	}
 	
 	
 

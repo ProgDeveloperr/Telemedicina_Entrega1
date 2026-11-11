@@ -356,6 +356,45 @@ public class ControllerTurno implements TurnoRepository {
 		return false;
 	}
 	
+	
+	
+	@Override
+	public boolean horarioOcupadoExceptoTurno(
+			int idDisponibilidad,
+			java.time.LocalTime hora,
+			int idTurno) {
+
+		String sql = "SELECT id_turno "
+				+ "FROM turno "
+				+ "WHERE disponibilidad_id = ? "
+				+ "AND hora = ? "
+				+ "AND id_turno <> ? "
+				+ "AND estado <> 'CANCELADO'";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setInt(1, idDisponibilidad);
+
+			statement.setTime(
+					2,
+					Time.valueOf(hora)
+			);
+
+			statement.setInt(3, idTurno);
+
+			try (ResultSet result = statement.executeQuery()) {
+				return result.next();
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+	
+	
+	
 	private String consultaBase() {
 
 		return "SELECT "

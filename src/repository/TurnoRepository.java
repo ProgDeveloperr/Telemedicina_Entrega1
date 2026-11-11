@@ -20,5 +20,10 @@ public interface TurnoRepository {
 	boolean actualizarEstado(int idTurno, EstadoTurno estado);
 	
 	boolean horarioOcupado(int idDisponibilidad, LocalTime hora);
+	
+	boolean horarioOcupadoExceptoTurno(
+			int idDisponibilidad,
+			LocalTime hora,
+			int idTurno);
 
 }
