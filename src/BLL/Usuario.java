@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.LocalDateTime;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
@@ -15,6 +16,9 @@ import DLL.ControllerProfesional;
 import DLL.ControllerUsuario;
 import DLL.ControllerDisponibilidad;
 import DLL.ControllerTurno;
+import DLL.ControllerConsulta;
+
+
 public class Usuario implements Menu {
 
 
@@ -152,7 +156,11 @@ public class Usuario implements Menu {
 
 				registrarRetrasoEstimado();
 
-			} else if (opcion >= 3 && opcion <= 4) {
+			} else if (opcion == 3) {
+
+				registrarConsultaRealizada();
+
+			} else if (opcion == 4) {
 
 				mostrarPendiente(opciones[opcion]);
 			}
@@ -2704,6 +2712,278 @@ public class Usuario implements Menu {
 	
 	
 	
+	
+	
+	private void registrarConsultaRealizada() {
+
+		ControllerProfesional controllerProfesional =
+				new ControllerProfesional();
+
+		Profesional profesional =
+				controllerProfesional.obtenerPorUsuario(idUsuario);
+
+		if (profesional == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudieron obtener los datos del profesional.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerTurno controllerTurno =
+				new ControllerTurno();
+
+		ControllerConsulta controllerConsulta =
+				new ControllerConsulta();
+
+		LinkedList<Turno> turnos =
+				controllerTurno.obtenerPorProfesional(
+						profesional.getIdProfesional()
+				);
+
+		DateTimeFormatter formatoFecha =
+				DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+		DateTimeFormatter formatoHora =
+				DateTimeFormatter.ofPattern("HH:mm");
+
+		StringBuilder listado =
+				new StringBuilder();
+
+		int cantidadDisponibles = 0;
+
+		for (Turno turno : turnos) {
+
+			if (turno.estaPresente()
+					&& !controllerConsulta.existePorTurno(
+							turno.getIdTurno()
+					)) {
+
+				listado.append("ID: ")
+						.append(turno.getIdTurno())
+						.append(" | ")
+						.append(turno.getPaciente().getNombre())
+						.append(" ")
+						.append(turno.getPaciente().getApellido())
+						.append(" | ")
+						.append(
+								turno.getFecha()
+										.format(formatoFecha)
+						)
+						.append(" ")
+						.append(
+								turno.getHora()
+										.format(formatoHora)
+						)
+						.append("\n");
+
+				cantidadDisponibles++;
+			}
+		}
+
+		if (cantidadDisponibles == 0) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No hay turnos con llegada registrada pendientes de consulta.",
+					"Sin consultas pendientes",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		String entrada =
+				JOptionPane.showInputDialog(
+						null,
+						listado.toString()
+								+ "\nIngrese el ID del turno atendido:",
+						"Telemedicina - Registrar consulta",
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (entrada == null) {
+			return;
+		}
+
+		int idTurno;
+
+		try {
+
+			idTurno =
+					Integer.parseInt(
+							entrada.trim()
+					);
+
+			if (idTurno <= 0) {
+				throw new NumberFormatException();
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID del turno debe ser un numero entero mayor que cero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Turno turnoSeleccionado = null;
+
+		for (Turno turno : turnos) {
+
+			if (turno.getIdTurno() == idTurno
+					&& turno.estaPresente()
+					&& !controllerConsulta.existePorTurno(
+							turno.getIdTurno()
+					)) {
+
+				turnoSeleccionado = turno;
+				break;
+			}
+		}
+
+		if (turnoSeleccionado == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El turno seleccionado no esta disponible para registrar una consulta.",
+					"Turno invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		JTextField campoObservaciones =
+				new JTextField();
+
+		JTextField campoSeguimiento =
+				new JTextField();
+
+		Object[] campos = {
+				"Observaciones:", campoObservaciones,
+				"Seguimiento (opcional):", campoSeguimiento
+		};
+
+		int opcion =
+				JOptionPane.showConfirmDialog(
+						null,
+						campos,
+						"Telemedicina - Datos de la consulta",
+						JOptionPane.OK_CANCEL_OPTION,
+						JOptionPane.PLAIN_MESSAGE
+				);
+
+		if (opcion != JOptionPane.OK_OPTION) {
+			return;
+		}
+
+		String observaciones =
+				campoObservaciones.getText().trim();
+
+		String seguimiento =
+				campoSeguimiento.getText().trim();
+
+		if (observaciones.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Las observaciones son obligatorias.",
+					"Datos incompletos",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		if (seguimiento.isEmpty()) {
+			seguimiento = null;
+		}
+
+		LocalDateTime fechaHoraAtencion =
+				LocalDateTime.now();
+
+		Consulta consultaNueva =
+				new Consulta(
+						0,
+						fechaHoraAtencion,
+						observaciones,
+						seguimiento,
+						turnoSeleccionado
+				);
+
+		int confirmacion =
+				JOptionPane.showConfirmDialog(
+						null,
+						"¿Desea registrar esta consulta?\n\n"
+								+ "Paciente: "
+								+ turnoSeleccionado
+										.getPaciente()
+										.getNombre()
+								+ " "
+								+ turnoSeleccionado
+										.getPaciente()
+										.getApellido()
+								+ "\nFecha del turno: "
+								+ turnoSeleccionado
+										.getFecha()
+										.format(formatoFecha)
+								+ "\nHora: "
+								+ turnoSeleccionado
+										.getHora()
+										.format(formatoHora)
+								+ "\n\nObservaciones: "
+								+ observaciones
+								+ "\nSeguimiento: "
+								+ (seguimiento == null
+										? "Sin seguimiento"
+										: seguimiento),
+						"Confirmar consulta",
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (confirmacion != JOptionPane.YES_OPTION) {
+			return;
+		}
+
+		boolean registrada =
+				controllerConsulta.registrar(
+						consultaNueva
+				);
+
+		if (registrada) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Consulta registrada correctamente.",
+					"Registro exitoso",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+		} else {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudo registrar la consulta.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+		}
+	}
+	
+	
+	
+	
+	
 	private void asignarTurno() {
 
 		ControllerPaciente controllerPaciente =
@@ -3280,13 +3560,160 @@ public class Usuario implements Menu {
 	
 	
 	private void menuConsultasEmpleado() {
+
 		String[] opciones = {
 				"Consultar retraso registrado",
 				"Consultar historial de consultas",
 				"Volver"
 		};
 
-		menuSinFunciones("Consultas e informacion", opciones);
+		int opcion;
+
+		do {
+
+			opcion = JOptionPane.showOptionDialog(
+					null,
+					"Seleccione una opcion",
+					"Telemedicina - Consultas e informacion",
+					JOptionPane.DEFAULT_OPTION,
+					JOptionPane.PLAIN_MESSAGE,
+					null,
+					opciones,
+					opciones[0]
+			);
+
+			switch (opcion) {
+
+			case 0:
+				consultarRetrasosRegistrados();
+				break;
+
+			case 1:
+				mostrarPendiente("Consultar historial de consultas");
+				break;
+			}
+
+		} while (opcion != 2
+				&& opcion != JOptionPane.CLOSED_OPTION);
+	}
+	
+	
+	
+	
+	private void consultarRetrasosRegistrados() {
+
+		ControllerProfesional controllerProfesional =
+				new ControllerProfesional();
+
+		LinkedList<Profesional> profesionales =
+				controllerProfesional.buscar("");
+
+		if (profesionales.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No hay profesionales registrados.",
+					"Sin profesionales",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerDisponibilidad controllerDisponibilidad =
+				new ControllerDisponibilidad();
+
+		DateTimeFormatter formatoFecha =
+				DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+		DateTimeFormatter formatoHora =
+				DateTimeFormatter.ofPattern("HH:mm");
+
+		StringBuilder resultado =
+				new StringBuilder();
+
+		int cantidadRetrasos = 0;
+
+		for (Profesional profesional : profesionales) {
+
+			Usuario usuarioProfesional =
+					controllerProfesional
+							.obtenerUsuarioPorProfesional(
+									profesional.getIdProfesional()
+							);
+
+			if (usuarioProfesional == null) {
+				continue;
+			}
+
+			LinkedList<Disponibilidad> disponibilidades =
+					controllerDisponibilidad
+							.obtenerPorProfesional(
+									profesional.getIdProfesional()
+							);
+
+			for (Disponibilidad disponibilidad : disponibilidades) {
+
+				if (disponibilidad.tieneRetraso()
+						&& !disponibilidad.getFecha()
+								.isBefore(LocalDate.now())) {
+
+					resultado.append("Profesional: ")
+							.append(usuarioProfesional.getNombre())
+							.append(" ")
+							.append(usuarioProfesional.getApellido())
+
+							.append("\nEspecialidad: ")
+							.append(profesional.getEspecialidad())
+
+							.append("\nFecha: ")
+							.append(
+									disponibilidad.getFecha()
+											.format(formatoFecha)
+							)
+
+							.append("\nHorario: ")
+							.append(
+									disponibilidad.getHoraInicio()
+											.format(formatoHora)
+							)
+							.append(" - ")
+							.append(
+									disponibilidad.getHoraFin()
+											.format(formatoHora)
+							)
+
+							.append("\nRetraso estimado: ")
+							.append(
+									disponibilidad.getRetrasoEstimado()
+							)
+							.append(" minutos")
+
+							.append("\n------------------------------\n");
+
+					cantidadRetrasos++;
+				}
+			}
+		}
+
+		if (cantidadRetrasos == 0) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No hay retrasos estimados registrados.",
+					"Sin retrasos",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		JOptionPane.showMessageDialog(
+				null,
+				resultado.toString(),
+				"Telemedicina - Retrasos registrados",
+				JOptionPane.INFORMATION_MESSAGE
+		);
 	}
 
 	private void menuDisponibilidad() {

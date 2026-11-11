@@ -222,3 +222,20 @@ CREATE TABLE IF NOT EXISTS turno (
 
     INDEX idx_turno_disponibilidad_hora (disponibilidad_id, hora)
 );
+
+
+
+
+-- Consultas medicas realizadas a partir de un turno
+
+CREATE TABLE IF NOT EXISTS consulta (
+    id_consulta INT AUTO_INCREMENT PRIMARY KEY,
+    fecha_hora_atencion DATETIME NOT NULL,
+    observaciones TEXT NOT NULL,
+    seguimiento TEXT NULL,
+    turno_id INT NOT NULL UNIQUE,
+
+    CONSTRAINT fk_consulta_turno
+        FOREIGN KEY (turno_id)
+        REFERENCES turno(id_turno)
+);
