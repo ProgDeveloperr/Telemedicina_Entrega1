@@ -1316,7 +1316,7 @@ public class Usuario implements Menu {
 				break;
 
 			case 1:
-				mostrarPendiente("Consultar turnos");
+				consultarTurnos();
 				break;
 
 			case 2:
@@ -1337,6 +1337,83 @@ public class Usuario implements Menu {
 			}
 
 		} while (opcion != 6 && opcion != JOptionPane.CLOSED_OPTION);
+	}
+	
+	
+	
+	
+	private void consultarTurnos() {
+
+		ControllerTurno controllerTurno =
+				new ControllerTurno();
+
+		LinkedList<Turno> turnos =
+				controllerTurno.obtenerTodos();
+
+		if (turnos.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No hay turnos registrados.",
+					"Sin turnos",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		DateTimeFormatter formatoFecha =
+				DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+		DateTimeFormatter formatoHora =
+				DateTimeFormatter.ofPattern("HH:mm");
+
+		StringBuilder resultado =
+				new StringBuilder();
+
+		for (Turno turno : turnos) {
+
+			resultado.append("ID turno: ")
+					.append(turno.getIdTurno())
+
+					.append("\nPaciente: ")
+					.append(turno.getPaciente().getNombre())
+					.append(" ")
+					.append(turno.getPaciente().getApellido())
+
+					.append("\nDNI: ")
+					.append(turno.getPaciente().getDni())
+
+					.append("\nFecha: ")
+					.append(
+							turno.getFecha()
+									.format(formatoFecha)
+					)
+
+					.append("\nHora: ")
+					.append(
+							turno.getHora()
+									.format(formatoHora)
+					)
+
+					.append("\nEstado: ")
+					.append(turno.getEstado())
+
+					.append("\nDisponibilidad ID: ")
+					.append(
+							turno.getDisponibilidad()
+									.getIdDisponibilidad()
+					)
+
+					.append("\n------------------------------\n");
+		}
+
+		JOptionPane.showMessageDialog(
+				null,
+				resultado.toString(),
+				"Telemedicina - Turnos registrados",
+				JOptionPane.INFORMATION_MESSAGE
+		);
 	}
 	
 	
