@@ -252,24 +252,30 @@ public class LoginFrame extends JFrame {
 
 		case EMPLEADO:
 
-			DashboardEmpleadoFrame dashboard =
+			DashboardEmpleadoFrame dashboardEmpleado =
 					new DashboardEmpleadoFrame(
 							logueado
 					);
 
-			dashboard.setVisible(true);
+			dashboardEmpleado.setVisible(true);
 
 			break;
 
 		case PROFESIONAL:
 
-			/*
-			 * El dashboard profesional se migrara
-			 * en el siguiente bloque.
-			 */
-			logueado.MenuPrincipal();
+			DashboardProfesionalFrame dashboardProfesional =
+					new DashboardProfesionalFrame(
+							logueado
+					);
+
+			dashboardProfesional.setVisible(true);
 
 			break;
 		}
+		
+		
+		
+		
+		
 	}
 }
