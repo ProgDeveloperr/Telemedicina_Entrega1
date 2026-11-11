@@ -141,11 +141,17 @@ public class Usuario implements Menu {
 					opciones[0]);
 
 			if (opcion == 0) {
+
 				menuDisponibilidad();
-			} else if (opcion >= 1 && opcion <= 4) {
+
+			} else if (opcion == 1) {
+
+				consultarAgendaProfesional();
+
+			} else if (opcion >= 2 && opcion <= 4) {
+
 				mostrarPendiente(opciones[opcion]);
 			}
-
 		} while (opcion != 5 && opcion != JOptionPane.CLOSED_OPTION);
 	}
 
@@ -2938,6 +2944,111 @@ public class Usuario implements Menu {
 		}
 	}
 
+	
+	
+	
+	private void consultarAgendaProfesional() {
+
+		ControllerProfesional controllerProfesional =
+				new ControllerProfesional();
+
+		Profesional profesional =
+				controllerProfesional.obtenerPorUsuario(idUsuario);
+
+		if (profesional == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudieron obtener los datos del profesional.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerTurno controllerTurno =
+				new ControllerTurno();
+
+		LinkedList<Turno> turnos =
+				controllerTurno.obtenerPorProfesional(
+						profesional.getIdProfesional()
+				);
+
+		DateTimeFormatter formatoFecha =
+				DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+		DateTimeFormatter formatoHora =
+				DateTimeFormatter.ofPattern("HH:mm");
+
+		StringBuilder agenda =
+				new StringBuilder();
+
+		int cantidad = 0;
+
+		for (Turno turno : turnos) {
+
+			if (!turno.estaCancelado()
+					&& !turno.getFecha().isBefore(LocalDate.now())) {
+
+				agenda.append("ID turno: ")
+						.append(turno.getIdTurno())
+
+						.append("\nPaciente: ")
+						.append(turno.getPaciente().getNombre())
+						.append(" ")
+						.append(turno.getPaciente().getApellido())
+
+						.append("\nDNI: ")
+						.append(turno.getPaciente().getDni())
+
+						.append("\nFecha: ")
+						.append(
+								turno.getFecha()
+										.format(formatoFecha)
+						)
+
+						.append("\nHora: ")
+						.append(
+								turno.getHora()
+										.format(formatoHora)
+						)
+
+						.append("\nEstado: ")
+						.append(turno.getEstado())
+
+						.append("\n------------------------------\n");
+
+				cantidad++;
+			}
+		}
+
+		if (cantidad == 0) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No tiene turnos proximos registrados.",
+					"Agenda sin turnos",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		JOptionPane.showMessageDialog(
+				null,
+				agenda.toString(),
+				"Telemedicina - Mi agenda de turnos",
+				JOptionPane.INFORMATION_MESSAGE
+		);
+	}
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
