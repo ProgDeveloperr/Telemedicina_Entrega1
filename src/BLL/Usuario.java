@@ -1324,7 +1324,7 @@ public class Usuario implements Menu {
 				break;
 
 			case 3:
-				mostrarPendiente("Cancelar turno");
+				cancelarTurno();
 				break;
 
 			case 4:
@@ -1860,6 +1860,199 @@ public class Usuario implements Menu {
 			JOptionPane.showMessageDialog(
 					null,
 					"No se pudo modificar el turno.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+		}
+	}
+	
+	
+	
+	private void cancelarTurno() {
+
+		ControllerTurno controllerTurno =
+				new ControllerTurno();
+
+		LinkedList<Turno> turnos =
+				controllerTurno.obtenerTodos();
+
+		if (turnos.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No hay turnos registrados.",
+					"Sin turnos",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		DateTimeFormatter formatoFecha =
+				DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+		DateTimeFormatter formatoHora =
+				DateTimeFormatter.ofPattern("HH:mm");
+
+		StringBuilder listado =
+				new StringBuilder();
+
+		int cantidadCancelables = 0;
+
+		for (Turno turno : turnos) {
+
+			if (!turno.estaCancelado()
+					&& !turno.estaPresente()) {
+
+				listado.append("ID: ")
+						.append(turno.getIdTurno())
+						.append(" | ")
+						.append(turno.getPaciente().getNombre())
+						.append(" ")
+						.append(turno.getPaciente().getApellido())
+						.append(" | ")
+						.append(turno.getFecha().format(formatoFecha))
+						.append(" ")
+						.append(turno.getHora().format(formatoHora))
+						.append(" | ")
+						.append(turno.getEstado())
+						.append("\n");
+
+				cantidadCancelables++;
+			}
+		}
+
+		if (cantidadCancelables == 0) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No hay turnos disponibles para cancelar.",
+					"Sin turnos cancelables",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		String entrada =
+				JOptionPane.showInputDialog(
+						null,
+						listado.toString()
+								+ "\nIngrese el ID del turno que desea cancelar:",
+						"Telemedicina - Cancelar turno",
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (entrada == null) {
+			return;
+		}
+
+		int idTurno;
+
+		try {
+
+			idTurno = Integer.parseInt(
+					entrada.trim()
+			);
+
+			if (idTurno <= 0) {
+				throw new NumberFormatException();
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID del turno debe ser un numero entero mayor que cero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Turno turno =
+				controllerTurno.buscarPorId(idTurno);
+
+		if (turno == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontro el turno seleccionado.",
+					"Turno no encontrado",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		if (turno.estaCancelado()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El turno ya se encuentra cancelado.",
+					"Turno cancelado",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		if (turno.estaPresente()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se puede cancelar un turno con llegada registrada.",
+					"Turno no cancelable",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		int confirmacion =
+				JOptionPane.showConfirmDialog(
+						null,
+						"¿Desea cancelar este turno?\n\n"
+								+ "Paciente: "
+								+ turno.getPaciente().getNombre()
+								+ " "
+								+ turno.getPaciente().getApellido()
+								+ "\nFecha: "
+								+ turno.getFecha().format(formatoFecha)
+								+ "\nHora: "
+								+ turno.getHora().format(formatoHora)
+								+ "\nEstado actual: "
+								+ turno.getEstado(),
+						"Confirmar cancelacion",
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.WARNING_MESSAGE
+				);
+
+		if (confirmacion != JOptionPane.YES_OPTION) {
+			return;
+		}
+
+		boolean cancelado =
+				controllerTurno.actualizarEstado(
+						turno.getIdTurno(),
+						EstadoTurno.CANCELADO
+				);
+
+		if (cancelado) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Turno cancelado correctamente.",
+					"Cancelacion exitosa",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+		} else {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudo cancelar el turno.",
 					"Error",
 					JOptionPane.ERROR_MESSAGE
 			);

@@ -220,6 +220,5 @@ CREATE TABLE IF NOT EXISTS turno (
         FOREIGN KEY (disponibilidad_id)
         REFERENCES disponibilidad(id_disponibilidad),
 
-    CONSTRAINT uq_turno_disponibilidad_hora
-        UNIQUE (disponibilidad_id, hora)
+    INDEX idx_turno_disponibilidad_hora (disponibilidad_id, hora)
 );
