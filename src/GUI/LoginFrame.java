@@ -4,9 +4,12 @@ import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.Insets;
+import java.net.URL;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -45,21 +48,38 @@ public class LoginFrame extends JFrame {
 				JFrame.EXIT_ON_CLOSE
 		);
 
-		setSize(450, 320);
+		/*
+		 * Tamaño pensado para mostrar el GIF de 190 x 190
+		 * junto al formulario sin comprimir los componentes.
+		 */
+		setSize(670, 380);
 
 		setLocationRelativeTo(null);
 
 		setResizable(false);
+		
+		
+
+		/*
+		 * Icono de la aplicación en la barra de título.
+		 */
+		configurarIconoAplicacion();
 	}
 
 	private void inicializarComponentes() {
 
-		setLayout(new BorderLayout());
-
-		JLabel titulo = new JLabel(
-				"TELEMEDICINA",
-				SwingConstants.CENTER
+		setLayout(
+				new BorderLayout()
 		);
+
+		/*
+		 * TITULO
+		 */
+		JLabel titulo =
+				new JLabel(
+						"TELEMEDICINA",
+						SwingConstants.CENTER
+				);
 
 		titulo.setFont(
 				new Font(
@@ -73,7 +93,7 @@ public class LoginFrame extends JFrame {
 				BorderFactory.createEmptyBorder(
 						25,
 						10,
-						20,
+						15,
 						10
 				)
 		);
@@ -83,19 +103,81 @@ public class LoginFrame extends JFrame {
 				BorderLayout.NORTH
 		);
 
+		/*
+		 * PANEL CENTRAL
+		 *
+		 * GIF a la izquierda.
+		 * Formulario a la derecha.
+		 */
+		JPanel panelCentral =
+				new JPanel(
+						new BorderLayout(
+								30,
+								0
+						)
+				);
+
+		panelCentral.setBorder(
+				BorderFactory.createEmptyBorder(
+						10,
+						45,
+						30,
+						45
+				)
+		);
+
+		/*
+		 * GIF PRINCIPAL DEL LOGIN
+		 */
+		JLabel imagenLogin =
+				new JLabel(
+						"",
+						SwingConstants.CENTER
+				);
+
+		ImageIcon gifLogin =
+				cargarGifEscalado(
+						"/resources/imagenes/login.gif",
+						190,
+						190
+				);
+
+		if (gifLogin != null) {
+
+			imagenLogin.setIcon(
+					gifLogin
+			);
+		}
+
+		imagenLogin.setHorizontalAlignment(
+				SwingConstants.CENTER
+		);
+
+		imagenLogin.setVerticalAlignment(
+				SwingConstants.CENTER
+		);
+
+		imagenLogin.setBorder(
+				BorderFactory.createEmptyBorder(
+						0,
+						0,
+						0,
+						10
+				)
+		);
+
+		panelCentral.add(
+				imagenLogin,
+				BorderLayout.WEST
+		);
+
+		/*
+		 * FORMULARIO
+		 */
 		JPanel panelFormulario =
 				new JPanel(
 						new GridBagLayout()
 				);
-
-		panelFormulario.setBorder(
-				BorderFactory.createEmptyBorder(
-						10,
-						40,
-						25,
-						40
-				)
-		);
 
 		GridBagConstraints gbc =
 				new GridBagConstraints();
@@ -111,11 +193,15 @@ public class LoginFrame extends JFrame {
 		gbc.fill =
 				GridBagConstraints.HORIZONTAL;
 
+		/*
+		 * USUARIO
+		 */
 		JLabel etiquetaUsuario =
 				new JLabel("Usuario:");
 
 		gbc.gridx = 0;
 		gbc.gridy = 0;
+		gbc.gridwidth = 1;
 
 		panelFormulario.add(
 				etiquetaUsuario,
@@ -132,6 +218,9 @@ public class LoginFrame extends JFrame {
 				gbc
 		);
 
+		/*
+		 * CONTRASEÑA
+		 */
 		JLabel etiquetaClave =
 				new JLabel("Contraseña:");
 
@@ -153,6 +242,9 @@ public class LoginFrame extends JFrame {
 				gbc
 		);
 
+		/*
+		 * BOTON INGRESAR
+		 */
 		botonIngresar =
 				new JButton("Ingresar");
 
@@ -173,11 +265,19 @@ public class LoginFrame extends JFrame {
 				gbc
 		);
 
-		add(
+		panelCentral.add(
 				panelFormulario,
 				BorderLayout.CENTER
 		);
 
+		add(
+				panelCentral,
+				BorderLayout.CENTER
+		);
+
+		/*
+		 * Permite iniciar sesión presionando Enter.
+		 */
 		getRootPane()
 				.setDefaultButton(
 						botonIngresar
@@ -201,6 +301,9 @@ public class LoginFrame extends JFrame {
 								.getPassword()
 				);
 
+		/*
+		 * Validación de campos vacíos.
+		 */
 		if (nombreUsuario.isEmpty()
 				|| clave.isEmpty()) {
 
@@ -214,6 +317,9 @@ public class LoginFrame extends JFrame {
 			return;
 		}
 
+		/*
+		 * Autenticación mediante ControllerUsuario.
+		 */
 		Usuario logueado =
 				controllerUsuario.login(
 						nombreUsuario,
@@ -234,20 +340,18 @@ public class LoginFrame extends JFrame {
 			return;
 		}
 
-		JOptionPane.showMessageDialog(
-				this,
-				"Bienvenido: "
-						+ logueado.getNombre()
-						+ " "
-						+ logueado.getApellido()
-						+ "\nPerfil: "
-						+ logueado.getTipoUsuario(),
-				"Inicio de sesion correcto",
-				JOptionPane.INFORMATION_MESSAGE
+		/*
+		 * Mensaje de bienvenida personalizado según el rol.
+		 */
+		mostrarBienvenidaConImagen(
+				logueado
 		);
 
 		dispose();
 
+		/*
+		 * Navegación según el tipo de usuario.
+		 */
 		switch (logueado.getTipoUsuario()) {
 
 		case EMPLEADO:
@@ -272,10 +376,166 @@ public class LoginFrame extends JFrame {
 
 			break;
 		}
-		
-		
-		
-		
-		
+	}
+
+	private void mostrarBienvenidaConImagen(
+			Usuario usuario) {
+
+		String rutaIcono;
+
+		switch (usuario.getTipoUsuario()) {
+
+		case EMPLEADO:
+
+			rutaIcono =
+					"/resources/imagenes/ok_empleado.png";
+
+			break;
+
+		case PROFESIONAL:
+
+			rutaIcono =
+					"/resources/imagenes/ok_profesional.png";
+
+			break;
+
+		default:
+
+			rutaIcono =
+					"/resources/imagenes/icono_app.png";
+
+			break;
+		}
+
+		ImageIcon icono =
+				cargarIconoEscalado(
+						rutaIcono,
+						210,
+						210
+				);
+
+		JOptionPane.showMessageDialog(
+				this,
+				"Bienvenido: "
+						+ usuario.getNombre()
+						+ " "
+						+ usuario.getApellido()
+						+ "\nPerfil: "
+						+ usuario.getTipoUsuario(),
+				"Inicio de sesion correcto",
+				JOptionPane.INFORMATION_MESSAGE,
+				icono
+		);
+	}
+
+	/*
+	 * Carga el GIF principal y lo muestra escalado.
+	 * Se mantiene como ImageIcon para conservar la animación.
+	 */
+	private ImageIcon cargarGifEscalado(
+			String ruta,
+			int ancho,
+			int alto) {
+
+		URL url =
+				getClass().getResource(
+						ruta
+				);
+
+		if (url == null) {
+
+			System.out.println(
+					"No se encontro el GIF: "
+							+ ruta
+			);
+
+			return null;
+		}
+
+		ImageIcon gifOriginal =
+				new ImageIcon(
+						url
+				);
+
+		Image gifEscalado =
+				gifOriginal
+						.getImage()
+						.getScaledInstance(
+								ancho,
+								alto,
+								Image.SCALE_DEFAULT
+						);
+
+		return new ImageIcon(
+				gifEscalado
+		);
+	}
+
+	/*
+	 * Carga y escala imágenes PNG utilizadas como iconos.
+	 */
+	private ImageIcon cargarIconoEscalado(
+			String ruta,
+			int ancho,
+			int alto) {
+
+		URL url =
+				getClass().getResource(
+						ruta
+				);
+
+		if (url == null) {
+
+			System.out.println(
+					"No se encontro la imagen: "
+							+ ruta
+			);
+
+			return null;
+		}
+
+		Image imagen =
+				new ImageIcon(
+						url
+				)
+						.getImage()
+						.getScaledInstance(
+								ancho,
+								alto,
+								Image.SCALE_SMOOTH
+						);
+
+		return new ImageIcon(
+				imagen
+		);
+	}
+	
+	
+	
+	
+	private void configurarIconoAplicacion() {
+
+		URL url =
+				getClass().getResource(
+						"/resources/imagenes/icono_app.png"
+				);
+
+		if (url == null) {
+
+			System.out.println(
+					"No se encontro el icono de la aplicacion."
+			);
+
+			return;
+		}
+
+		ImageIcon icono =
+				new ImageIcon(
+						url
+				);
+
+		setIconImage(
+				icono.getImage()
+		);
 	}
 }

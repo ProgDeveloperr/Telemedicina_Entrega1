@@ -1,10 +1,16 @@
 package GUI;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Image;
+import java.net.URL;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -32,44 +38,57 @@ public class DashboardEmpleadoFrame extends JFrame {
 
 		setTitle(
 				"Telemedicina - Recepcion - "
-				+ usuario.getNombre()
-				+ " "
-				+ usuario.getApellido()
+						+ usuario.getNombre()
+						+ " "
+						+ usuario.getApellido()
 		);
 
 		setDefaultCloseOperation(
 				JFrame.EXIT_ON_CLOSE
 		);
 
-		setSize(650, 430);
+		setSize(820, 650);
 
 		setLocationRelativeTo(null);
 
 		setResizable(false);
+		
+		configurarIconoAplicacion();
 	}
 
 	private void inicializarComponentes() {
 
-		setLayout(new BorderLayout());
+		setLayout(
+				new BorderLayout()
+		);
 
+		/*
+		 * =====================================================
+		 * CABECERA
+		 * =====================================================
+		 */
 		JPanel panelSuperior =
-				new JPanel(
-						new BorderLayout()
-				);
+				new JPanel();
+
+		panelSuperior.setLayout(
+				new BoxLayout(
+						panelSuperior,
+						BoxLayout.Y_AXIS
+				)
+		);
 
 		panelSuperior.setBorder(
 				BorderFactory.createEmptyBorder(
 						25,
-						30,
 						20,
-						30
+						10,
+						20
 				)
 		);
 
 		JLabel titulo =
 				new JLabel(
-						"TELEMEDICINA",
-						SwingConstants.CENTER
+						"TELEMEDICINA"
 				);
 
 		titulo.setFont(
@@ -80,13 +99,16 @@ public class DashboardEmpleadoFrame extends JFrame {
 				)
 		);
 
+		titulo.setAlignmentX(
+				CENTER_ALIGNMENT
+		);
+
 		JLabel usuarioLabel =
 				new JLabel(
 						"Recepcionista: "
-						+ usuario.getNombre()
-						+ " "
-						+ usuario.getApellido(),
-						SwingConstants.CENTER
+								+ usuario.getNombre()
+								+ " "
+								+ usuario.getApellido()
 				);
 
 		usuarioLabel.setFont(
@@ -97,14 +119,20 @@ public class DashboardEmpleadoFrame extends JFrame {
 				)
 		);
 
-		panelSuperior.add(
-				titulo,
-				BorderLayout.NORTH
+		usuarioLabel.setAlignmentX(
+				CENTER_ALIGNMENT
 		);
 
 		panelSuperior.add(
-				usuarioLabel,
-				BorderLayout.SOUTH
+				titulo
+		);
+
+		panelSuperior.add(
+				Box.createVerticalStrut(5)
+		);
+
+		panelSuperior.add(
+				usuarioLabel
 		);
 
 		add(
@@ -112,6 +140,104 @@ public class DashboardEmpleadoFrame extends JFrame {
 				BorderLayout.NORTH
 		);
 
+		
+		
+		
+		
+		
+		
+		JPanel panelContenido =
+				new JPanel();
+
+		panelContenido.setLayout(
+				new BoxLayout(
+						panelContenido,
+						BoxLayout.Y_AXIS
+				)
+		);
+
+		panelContenido.setBorder(
+				BorderFactory.createEmptyBorder(
+						15,
+						45,
+						10,
+						45
+				)
+		);
+
+		/*
+		 * =====================================================
+		 * BANNER
+		 * =====================================================
+		 */
+		JLabel imagenEmpleado =
+				new JLabel(
+						"",
+						SwingConstants.CENTER
+				);
+
+		ImageIcon iconoEmpleado =
+				cargarIconoEscalado(
+						"/resources/imagenes/menu_empleado.png",
+
+						/*
+						
+						 * PRIMER NUMERO  = ANCHO
+						 * SEGUNDO NUMERO = ALTO
+						
+						 */
+						620,
+						190
+				);
+
+		if (iconoEmpleado != null) {
+
+			imagenEmpleado.setIcon(
+					iconoEmpleado
+			);
+		}
+
+		imagenEmpleado.setAlignmentX(
+				CENTER_ALIGNMENT
+		);
+
+		imagenEmpleado.setHorizontalAlignment(
+				SwingConstants.CENTER
+		);
+
+		
+		imagenEmpleado.setPreferredSize(
+				new Dimension(
+						650,
+						190
+				)
+		);
+
+		imagenEmpleado.setMaximumSize(
+				new Dimension(
+						650,
+						190
+				)
+		);
+
+		panelContenido.add(
+				imagenEmpleado
+		);
+
+		
+		
+		
+		
+		
+		panelContenido.add(
+				Box.createVerticalStrut(25)
+		);
+
+	
+		
+		
+		
+		
 		JPanel panelOpciones =
 				new JPanel(
 						new GridLayout(
@@ -122,23 +248,38 @@ public class DashboardEmpleadoFrame extends JFrame {
 						)
 				);
 
-		panelOpciones.setBorder(
-				BorderFactory.createEmptyBorder(
-						30,
-						60,
-						30,
-						60
+		panelOpciones.setAlignmentX(
+				CENTER_ALIGNMENT
+		);
+
+		panelOpciones.setPreferredSize(
+				new Dimension(
+						620,
+						170
+				)
+		);
+
+		panelOpciones.setMaximumSize(
+				new Dimension(
+						620,
+						170
 				)
 		);
 
 		JButton botonPacientes =
-				new JButton("Pacientes");
+				new JButton(
+						"Pacientes"
+				);
 
 		JButton botonProfesionales =
-				new JButton("Profesionales");
+				new JButton(
+						"Profesionales"
+				);
 
 		JButton botonTurnos =
-				new JButton("Turnos");
+				new JButton(
+						"Turnos"
+				);
 
 		JButton botonConsultas =
 				new JButton(
@@ -161,13 +302,24 @@ public class DashboardEmpleadoFrame extends JFrame {
 				botonConsultas
 		);
 
+		panelContenido.add(
+				panelOpciones
+		);
+
 		add(
-				panelOpciones,
+				panelContenido,
 				BorderLayout.CENTER
 		);
 
+		/*
+		 * =====================================================
+		 * CERRAR SESION
+		 * =====================================================
+		 */
 		JButton botonCerrarSesion =
-				new JButton("Cerrar sesion");
+				new JButton(
+						"Cerrar sesion"
+				);
 
 		JPanel panelInferior =
 				new JPanel();
@@ -190,7 +342,12 @@ public class DashboardEmpleadoFrame extends JFrame {
 				BorderLayout.SOUTH
 		);
 
-		
+		/*
+		 * =====================================================
+		 * EVENTOS
+		 * =====================================================
+		 */
+
 		botonPacientes.addActionListener(
 				e -> abrirPacientes()
 		);
@@ -212,8 +369,6 @@ public class DashboardEmpleadoFrame extends JFrame {
 		);
 	}
 
-	
-
 	private void cerrarSesion() {
 
 		int confirmacion =
@@ -225,7 +380,9 @@ public class DashboardEmpleadoFrame extends JFrame {
 						JOptionPane.QUESTION_MESSAGE
 				);
 
-		if (confirmacion != JOptionPane.YES_OPTION) {
+		if (confirmacion
+				!= JOptionPane.YES_OPTION) {
+
 			return;
 		}
 
@@ -236,50 +393,130 @@ public class DashboardEmpleadoFrame extends JFrame {
 
 		login.setVisible(true);
 	}
+
 	private void abrirPacientes() {
 
 		setVisible(false);
 
 		PacientesFrame pacientesFrame =
-				new PacientesFrame(this);
+				new PacientesFrame(
+						this
+				);
 
-		pacientesFrame.setVisible(true);
+		pacientesFrame.setVisible(
+				true
+		);
 	}
-	
-	
-	
+
 	private void abrirProfesionales() {
 
 		setVisible(false);
 
 		ProfesionalesFrame profesionalesFrame =
-				new ProfesionalesFrame(this);
+				new ProfesionalesFrame(
+						this
+				);
 
-		profesionalesFrame.setVisible(true);
+		profesionalesFrame.setVisible(
+				true
+		);
 	}
-	
-	
-	
-	
+
 	private void abrirTurnos() {
 
 		setVisible(false);
 
 		TurnosFrame turnosFrame =
-				new TurnosFrame(this);
+				new TurnosFrame(
+						this
+				);
 
-		turnosFrame.setVisible(true);
+		turnosFrame.setVisible(
+				true
+		);
 	}
 
-	
 	private void abrirConsultasInformacion() {
 
 		setVisible(false);
 
 		ConsultasInformacionFrame consultasFrame =
-				new ConsultasInformacionFrame(this);
+				new ConsultasInformacionFrame(
+						this
+				);
 
-		consultasFrame.setVisible(true);
+		consultasFrame.setVisible(
+				true
+		);
+	}
+
+	/*
+	 * =========================================================
+	 * CARGA Y ESCALADO DE IMAGEN
+	 * =========================================================
+	 */
+	private ImageIcon cargarIconoEscalado(
+			String ruta,
+			int ancho,
+			int alto) {
+
+		URL url =
+				getClass().getResource(
+						ruta
+				);
+
+		if (url == null) {
+
+			System.out.println(
+					"No se encontro la imagen: "
+							+ ruta
+			);
+
+			return null;
+		}
+
+		Image imagen =
+				new ImageIcon(
+						url
+				)
+						.getImage()
+						.getScaledInstance(
+								ancho,
+								alto,
+								Image.SCALE_SMOOTH
+						);
+
+		return new ImageIcon(
+				imagen
+		);
 	}
 	
+	
+	
+	
+	private void configurarIconoAplicacion() {
+
+		URL url =
+				getClass().getResource(
+						"/resources/imagenes/icono_app.png"
+				);
+
+		if (url == null) {
+
+			System.out.println(
+					"No se encontro el icono de la aplicacion."
+			);
+
+			return;
+		}
+
+		ImageIcon icono =
+				new ImageIcon(
+						url
+				);
+
+		setIconImage(
+				icono.getImage()
+		);
+	}
 }
