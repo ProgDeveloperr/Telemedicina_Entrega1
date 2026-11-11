@@ -210,9 +210,7 @@ public class DashboardProfesionalFrame extends JFrame {
 		);
 
 		botonHistorial.addActionListener(
-				e -> mostrarModuloPendiente(
-						"Historial de consultas"
-				)
+				e -> abrirHistorial()
 		);
 
 		botonCerrarSesion.addActionListener(
@@ -318,10 +316,18 @@ public class DashboardProfesionalFrame extends JFrame {
 	
 	
 	
-	
-	
-	
-	
+	private void abrirHistorial() {
+
+		setVisible(false);
+
+		HistorialProfesionalFrame historialFrame =
+				new HistorialProfesionalFrame(
+						this,
+						usuario
+				);
+
+		historialFrame.setVisible(true);
+	}
 	
 	
 	
