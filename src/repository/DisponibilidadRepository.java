@@ -13,5 +13,10 @@ public interface DisponibilidadRepository {
 	Disponibilidad buscarPorId(int idDisponibilidad, int idProfesional);
 
 	boolean modificar(Disponibilidad disponibilidad, int idProfesional);
+	
+	boolean actualizarRetraso(
+			int idDisponibilidad,
+			int idProfesional,
+			int minutos);
 
 }

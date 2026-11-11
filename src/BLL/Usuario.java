@@ -148,7 +148,11 @@ public class Usuario implements Menu {
 
 				consultarAgendaProfesional();
 
-			} else if (opcion >= 2 && opcion <= 4) {
+			} else if (opcion == 2) {
+
+				registrarRetrasoEstimado();
+
+			} else if (opcion >= 3 && opcion <= 4) {
 
 				mostrarPendiente(opciones[opcion]);
 			}
@@ -2475,7 +2479,228 @@ public class Usuario implements Menu {
 	
 	
 	
+	private void registrarRetrasoEstimado() {
 
+		ControllerProfesional controllerProfesional =
+				new ControllerProfesional();
+
+		Profesional profesional =
+				controllerProfesional.obtenerPorUsuario(idUsuario);
+
+		if (profesional == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudieron obtener los datos del profesional.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerDisponibilidad controllerDisponibilidad =
+				new ControllerDisponibilidad();
+
+		LinkedList<Disponibilidad> disponibilidades =
+				controllerDisponibilidad.obtenerPorProfesional(
+						profesional.getIdProfesional()
+				);
+
+		DateTimeFormatter formatoFecha =
+				DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+		DateTimeFormatter formatoHora =
+				DateTimeFormatter.ofPattern("HH:mm");
+
+		StringBuilder listado =
+				new StringBuilder();
+
+		int cantidad = 0;
+
+		for (Disponibilidad disponibilidad : disponibilidades) {
+
+			if (!disponibilidad.getFecha().isBefore(LocalDate.now())) {
+
+				listado.append("ID: ")
+						.append(disponibilidad.getIdDisponibilidad())
+						.append(" | ")
+						.append(disponibilidad.getFecha().format(formatoFecha))
+						.append(" | ")
+						.append(disponibilidad.getHoraInicio().format(formatoHora))
+						.append(" - ")
+						.append(disponibilidad.getHoraFin().format(formatoHora))
+						.append(" | Retraso actual: ")
+						.append(disponibilidad.getRetrasoEstimado())
+						.append(" min")
+						.append("\n");
+
+				cantidad++;
+			}
+		}
+
+		if (cantidad == 0) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No tiene disponibilidades actuales o futuras.",
+					"Sin disponibilidades",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		String entradaDisponibilidad =
+				JOptionPane.showInputDialog(
+						null,
+						listado.toString()
+								+ "\nIngrese el ID de la disponibilidad:",
+						"Telemedicina - Registrar retraso",
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (entradaDisponibilidad == null) {
+			return;
+		}
+
+		int idDisponibilidad;
+
+		try {
+
+			idDisponibilidad =
+					Integer.parseInt(
+							entradaDisponibilidad.trim()
+					);
+
+			if (idDisponibilidad <= 0) {
+				throw new NumberFormatException();
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID debe ser un numero entero mayor que cero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Disponibilidad disponibilidad =
+				controllerDisponibilidad.buscarPorId(
+						idDisponibilidad,
+						profesional.getIdProfesional()
+				);
+
+		if (disponibilidad == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontro una disponibilidad propia con ese ID.",
+					"Disponibilidad no encontrada",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		String entradaMinutos =
+				JOptionPane.showInputDialog(
+						null,
+						"Disponibilidad:\n"
+								+ disponibilidad.getFecha().format(formatoFecha)
+								+ "\n"
+								+ disponibilidad.getHoraInicio().format(formatoHora)
+								+ " - "
+								+ disponibilidad.getHoraFin().format(formatoHora)
+								+ "\n\nRetraso actual: "
+								+ disponibilidad.getRetrasoEstimado()
+								+ " minutos"
+								+ "\n\nIngrese el nuevo retraso estimado en minutos:",
+						"Telemedicina - Registrar retraso",
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (entradaMinutos == null) {
+			return;
+		}
+
+		int minutos;
+
+		try {
+
+			minutos =
+					Integer.parseInt(
+							entradaMinutos.trim()
+					);
+
+			if (minutos < 0) {
+				throw new NumberFormatException();
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El retraso debe ser un numero entero mayor o igual a cero.",
+					"Retraso invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		int confirmacion =
+				JOptionPane.showConfirmDialog(
+						null,
+						"¿Desea registrar este retraso?\n\n"
+								+ "Fecha: "
+								+ disponibilidad.getFecha().format(formatoFecha)
+								+ "\nHorario: "
+								+ disponibilidad.getHoraInicio().format(formatoHora)
+								+ " - "
+								+ disponibilidad.getHoraFin().format(formatoHora)
+								+ "\nRetraso estimado: "
+								+ minutos
+								+ " minutos",
+						"Confirmar retraso",
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (confirmacion != JOptionPane.YES_OPTION) {
+			return;
+		}
+
+		boolean actualizado =
+				controllerDisponibilidad.actualizarRetraso(
+						disponibilidad.getIdDisponibilidad(),
+						profesional.getIdProfesional(),
+						minutos
+				);
+
+		if (actualizado) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Retraso estimado registrado correctamente.",
+					"Registro exitoso",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+		} else {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudo registrar el retraso estimado.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+		}
+	}
 	
 	
 	

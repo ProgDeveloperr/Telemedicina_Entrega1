@@ -180,4 +180,37 @@ public class ControllerDisponibilidad implements DisponibilidadRepository {
 	}
 	
 	
+	@Override
+	public boolean actualizarRetraso(
+			int idDisponibilidad,
+			int idProfesional,
+			int minutos) {
+
+		if (minutos < 0) {
+			return false;
+		}
+
+		String sql = "UPDATE disponibilidad "
+				+ "SET retraso_estimado = ? "
+				+ "WHERE id_disponibilidad = ? "
+				+ "AND profesional_id = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setInt(1, minutos);
+			statement.setInt(2, idDisponibilidad);
+			statement.setInt(3, idProfesional);
+
+			int filasAfectadas = statement.executeUpdate();
+
+			return filasAfectadas > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+	
+	
 }
