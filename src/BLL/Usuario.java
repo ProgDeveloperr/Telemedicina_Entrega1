@@ -173,6 +173,7 @@ public class Usuario implements Menu {
 				"Registrar paciente",
 				"Consultar pacientes",
 				"Modificar datos de paciente",
+				"Eliminar paciente",
 				"Volver"
 		};
 
@@ -204,11 +205,175 @@ public class Usuario implements Menu {
 			case 2:
 				modificarPaciente();
 				break;
+			case 3:
+				eliminarPaciente();
+				break;
 			}
 
-		} while (opcion != 3 && opcion != JOptionPane.CLOSED_OPTION);
-	}
+		} while (opcion != 4 && opcion != JOptionPane.CLOSED_OPTION);	}
 
+	
+	
+	
+	
+	
+	private void eliminarPaciente() {
+
+		ControllerPaciente controllerPaciente =
+				new ControllerPaciente();
+
+		LinkedList<Paciente> pacientes =
+				controllerPaciente.buscar("");
+
+		if (pacientes.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No hay pacientes registrados.",
+					"Sin pacientes",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		StringBuilder listado =
+				new StringBuilder();
+
+		for (Paciente paciente : pacientes) {
+
+			listado.append("ID: ")
+					.append(paciente.getIdPaciente())
+					.append(" | ")
+					.append(paciente.getNombre())
+					.append(" ")
+					.append(paciente.getApellido())
+					.append(" | DNI: ")
+					.append(paciente.getDni())
+					.append("\n");
+		}
+
+		String entrada =
+				JOptionPane.showInputDialog(
+						null,
+						listado.toString()
+								+ "\nIngrese el ID del paciente que desea eliminar:",
+						"Telemedicina - Eliminar paciente",
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (entrada == null) {
+			return;
+		}
+
+		int idPaciente;
+
+		try {
+
+			idPaciente =
+					Integer.parseInt(
+							entrada.trim()
+					);
+
+			if (idPaciente <= 0) {
+				throw new NumberFormatException();
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID debe ser un numero entero mayor que cero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Paciente paciente =
+				controllerPaciente.buscarPorId(
+						idPaciente
+				);
+
+		if (paciente == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontro el paciente seleccionado.",
+					"Paciente no encontrado",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		if (controllerPaciente.tieneTurnos(
+				paciente.getIdPaciente())) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se puede eliminar este paciente porque posee turnos asociados.\n\n"
+							+ "Sus datos deben conservarse para mantener el historial del sistema.",
+					"Paciente no eliminable",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		int confirmacion =
+				JOptionPane.showConfirmDialog(
+						null,
+						"¿Desea eliminar este paciente?\n\n"
+								+ "ID: "
+								+ paciente.getIdPaciente()
+								+ "\nPaciente: "
+								+ paciente.getNombre()
+								+ " "
+								+ paciente.getApellido()
+								+ "\nDNI: "
+								+ paciente.getDni()
+								+ "\n\nEsta accion no se puede deshacer.",
+						"Confirmar eliminacion",
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.WARNING_MESSAGE
+				);
+
+		if (confirmacion != JOptionPane.YES_OPTION) {
+			return;
+		}
+
+		boolean eliminado =
+				controllerPaciente.eliminar(
+						paciente.getIdPaciente()
+				);
+
+	if (eliminado) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"Paciente eliminado correctamente.",
+					"Eliminacion exitosa",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+		} else {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudo eliminar el paciente.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+		}
+	}
+	
+	
+	
+	
+	
+	
 	private void registrarPaciente() {
 
 		JTextField campoDni = new JTextField();

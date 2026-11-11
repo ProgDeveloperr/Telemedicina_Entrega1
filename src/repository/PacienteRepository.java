@@ -15,4 +15,8 @@ public interface PacienteRepository {
 	LinkedList<Paciente> buscar(String filtro);
 
 	boolean modificar(Paciente paciente);
+	
+	boolean tieneTurnos(int idPaciente);
+
+	boolean eliminar(int idPaciente);
 }

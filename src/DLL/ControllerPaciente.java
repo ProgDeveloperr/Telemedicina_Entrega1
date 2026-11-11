@@ -176,4 +176,59 @@ public class ControllerPaciente implements PacienteRepository {
 	}
 	
 	
+	
+	@Override
+	public boolean tieneTurnos(int idPaciente) {
+
+		String sql = "SELECT id_turno "
+				+ "FROM turno "
+				+ "WHERE paciente_id = ? "
+				+ "LIMIT 1";
+
+		try (PreparedStatement statement =
+				connection.prepareStatement(sql)) {
+
+			statement.setInt(1, idPaciente);
+
+			try (ResultSet result =
+					statement.executeQuery()) {
+
+				return result.next();
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean eliminar(int idPaciente) {
+
+		if (tieneTurnos(idPaciente)) {
+			return false;
+		}
+
+		String sql = "DELETE FROM paciente "
+				+ "WHERE id_paciente = ?";
+
+		try (PreparedStatement statement =
+				connection.prepareStatement(sql)) {
+
+			statement.setInt(1, idPaciente);
+
+			int filasAfectadas =
+					statement.executeUpdate();
+
+			return filasAfectadas > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+	
+	
 }
