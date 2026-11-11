@@ -162,7 +162,7 @@ public class Usuario implements Menu {
 
 			} else if (opcion == 4) {
 
-				mostrarPendiente(opciones[opcion]);
+				consultarHistorialProfesional();
 			}
 		} while (opcion != 5 && opcion != JOptionPane.CLOSED_OPTION);
 	}
@@ -2984,6 +2984,126 @@ public class Usuario implements Menu {
 	
 	
 	
+	
+	private void consultarHistorialProfesional() {
+
+		ControllerProfesional controllerProfesional =
+				new ControllerProfesional();
+
+		Profesional profesional =
+				controllerProfesional.obtenerPorUsuario(idUsuario);
+
+		if (profesional == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se pudieron obtener los datos del profesional.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerConsulta controllerConsulta =
+				new ControllerConsulta();
+
+		LinkedList<Consulta> consultas =
+				controllerConsulta.obtenerPorProfesional(
+						profesional.getIdProfesional()
+				);
+
+		if (consultas.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No tiene consultas registradas.",
+					"Sin historial",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		DateTimeFormatter formatoFechaHora =
+				DateTimeFormatter.ofPattern(
+						"dd/MM/yyyy HH:mm"
+				);
+
+		StringBuilder historial =
+				new StringBuilder();
+
+		for (Consulta consulta : consultas) {
+
+			historial.append("Consulta ID: ")
+					.append(consulta.getIdConsulta())
+
+					.append("\nPaciente: ")
+					.append(
+							consulta.getTurno()
+									.getPaciente()
+									.getNombre()
+					)
+					.append(" ")
+					.append(
+							consulta.getTurno()
+									.getPaciente()
+									.getApellido()
+					)
+
+					.append("\nDNI: ")
+					.append(
+							consulta.getTurno()
+									.getPaciente()
+									.getDni()
+					)
+
+					.append("\nFecha de atencion: ")
+					.append(
+							consulta.getFechaHoraAtencion()
+									.format(formatoFechaHora)
+					)
+
+					.append("\nObservaciones: ")
+					.append(
+							consulta.getObservaciones()
+					)
+
+					.append("\nSeguimiento: ");
+
+			if (consulta.getSeguimiento() == null
+					|| consulta.getSeguimiento()
+							.trim().isEmpty()) {
+
+				historial.append("Sin seguimiento");
+
+			} else {
+
+				historial.append(
+						consulta.getSeguimiento()
+				);
+			}
+
+			historial.append(
+					"\n------------------------------\n"
+			);
+		}
+
+		JOptionPane.showMessageDialog(
+				null,
+				historial.toString(),
+				"Telemedicina - Historial de consultas",
+				JOptionPane.INFORMATION_MESSAGE
+		);
+	}
+	
+	
+	
+	
+	
+	
+	
+	
 	private void asignarTurno() {
 
 		ControllerPaciente controllerPaciente =
@@ -3589,12 +3709,213 @@ public class Usuario implements Menu {
 				break;
 
 			case 1:
-				mostrarPendiente("Consultar historial de consultas");
+				consultarHistorialPaciente();
 				break;
 			}
 
 		} while (opcion != 2
 				&& opcion != JOptionPane.CLOSED_OPTION);
+	}
+	
+	
+	
+	
+	private void consultarHistorialPaciente() {
+
+		ControllerPaciente controllerPaciente =
+				new ControllerPaciente();
+
+		LinkedList<Paciente> pacientes =
+				controllerPaciente.buscar("");
+
+		if (pacientes.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No hay pacientes registrados.",
+					"Sin pacientes",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		StringBuilder listadoPacientes =
+				new StringBuilder();
+
+		for (Paciente paciente : pacientes) {
+
+			listadoPacientes
+					.append("ID: ")
+					.append(paciente.getIdPaciente())
+					.append(" | ")
+					.append(paciente.getNombre())
+					.append(" ")
+					.append(paciente.getApellido())
+					.append(" | DNI: ")
+					.append(paciente.getDni())
+					.append("\n");
+		}
+
+		String entrada =
+				JOptionPane.showInputDialog(
+						null,
+						listadoPacientes.toString()
+								+ "\nIngrese el ID del paciente:",
+						"Telemedicina - Historial de consultas",
+						JOptionPane.QUESTION_MESSAGE
+				);
+
+		if (entrada == null) {
+			return;
+		}
+
+		int idPaciente;
+
+		try {
+
+			idPaciente =
+					Integer.parseInt(
+							entrada.trim()
+					);
+
+			if (idPaciente <= 0) {
+				throw new NumberFormatException();
+			}
+
+		} catch (NumberFormatException e) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El ID del paciente debe ser un numero entero mayor que cero.",
+					"ID invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			return;
+		}
+
+		Paciente paciente =
+				controllerPaciente.buscarPorId(
+						idPaciente
+				);
+
+		if (paciente == null) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"No se encontro el paciente seleccionado.",
+					"Paciente no encontrado",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		ControllerConsulta controllerConsulta =
+				new ControllerConsulta();
+
+		LinkedList<Consulta> consultas =
+				controllerConsulta.obtenerPorPaciente(
+						idPaciente
+				);
+
+		if (consultas.isEmpty()) {
+
+			JOptionPane.showMessageDialog(
+					null,
+					"El paciente "
+							+ paciente.getNombre()
+							+ " "
+							+ paciente.getApellido()
+							+ " no tiene consultas registradas.",
+					"Sin historial",
+					JOptionPane.INFORMATION_MESSAGE
+			);
+
+			return;
+		}
+
+		DateTimeFormatter formatoFechaHora =
+				DateTimeFormatter.ofPattern(
+						"dd/MM/yyyy HH:mm"
+				);
+
+		StringBuilder historial =
+				new StringBuilder();
+
+		historial.append("Paciente: ")
+				.append(paciente.getNombre())
+				.append(" ")
+				.append(paciente.getApellido())
+
+				.append("\nDNI: ")
+				.append(paciente.getDni())
+
+				.append("\n================================\n");
+
+		for (Consulta consulta : consultas) {
+
+			historial.append("Consulta ID: ")
+					.append(consulta.getIdConsulta())
+
+					.append("\nFecha de atencion: ")
+					.append(
+							consulta.getFechaHoraAtencion()
+									.format(formatoFechaHora)
+					)
+
+					.append("\nFecha del turno: ")
+					.append(
+							consulta.getTurno()
+									.getFecha()
+									.format(
+											DateTimeFormatter
+													.ofPattern("dd/MM/yyyy")
+									)
+					)
+
+					.append("\nHora del turno: ")
+					.append(
+							consulta.getTurno()
+									.getHora()
+									.format(
+											DateTimeFormatter
+													.ofPattern("HH:mm")
+									)
+					)
+
+					.append("\nObservaciones: ")
+					.append(
+							consulta.getObservaciones()
+					)
+
+					.append("\nSeguimiento: ");
+
+			if (consulta.getSeguimiento() == null
+					|| consulta.getSeguimiento()
+							.trim().isEmpty()) {
+
+				historial.append("Sin seguimiento");
+
+			} else {
+
+				historial.append(
+						consulta.getSeguimiento()
+				);
+			}
+
+			historial.append(
+					"\n------------------------------\n"
+			);
+		}
+
+		JOptionPane.showMessageDialog(
+				null,
+				historial.toString(),
+				"Telemedicina - Historial del paciente",
+				JOptionPane.INFORMATION_MESSAGE
+		);
 	}
 	
 	
