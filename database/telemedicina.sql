@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 11-11-2026 a las 08:11:32
+-- Tiempo de generación: 12-11-2026 a las 04:09:53
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -109,8 +109,7 @@ CREATE TABLE `profesional` (
 INSERT INTO `profesional` (`id_profesional`, `matricula`, `especialidad`, `usuario_id`) VALUES
 (1, 'MP12345', 'Medicina General', 2),
 (2, 'MP67890', 'Pediatria', 3),
-(3, 'MP24680', 'Cardiologia', 4),
-(4, 'MPTEST01', 'clinica', 5);
+(3, 'MP24680', 'Cardiologia', 4);
 
 -- --------------------------------------------------------
 
@@ -160,8 +159,7 @@ INSERT INTO `usuario` (`id_usuario`, `nombre`, `apellido`, `nombre_usuario`, `cl
 (1, 'Joaquin', 'Gonzalez Garcia', 'recepcion', '$2a$10$seYXgwBRrwUr/Mq9XORPOOlk0nma.avTe9PSHJkUmgxJv6x1uAxsq', 'EMPLEADO'),
 (2, 'Carlos', 'Medico', 'doctor', '$2a$10$PW29dhJTQosw9AY1weV1buOQkFDOT6xyCnV/M7gCBGVGI/Z.NvxdO', 'PROFESIONAL'),
 (3, 'Laura', 'Gomez', 'laura', '$2a$10$yzmFnVoxoxLb9VB.KM6gquElqEIiX5ZL4aMDxk3YxaPVVQDnWSFsq', 'PROFESIONAL'),
-(4, 'Martin', 'Diaz', 'martin', '$2a$10$/gPvEiWw75MLWVrwYD5NFe1d8i7ZWJ4aZt/6fI3wDL72/jgWnaYau', 'PROFESIONAL'),
-(5, 'test', 'medico', 'testmedico', '$2a$10$2W7Gd5ua.x1GReuDoZOPXOZwmcGQRL9AKj/bO4pv2azv49oCotBv6', 'PROFESIONAL');
+(4, 'Martin', 'Diaz', 'martin', '$2a$10$/gPvEiWw75MLWVrwYD5NFe1d8i7ZWJ4aZt/6fI3wDL72/jgWnaYau', 'PROFESIONAL');
 
 --
 -- Índices para tablas volcadas

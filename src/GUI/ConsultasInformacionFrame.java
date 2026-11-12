@@ -322,9 +322,7 @@ public class ConsultasInformacionFrame extends JFrame {
 				"ID",
 				"Fecha atencion",
 				"Fecha turno",
-				"Hora",
-				"Observaciones",
-				"Seguimiento"
+				"Hora"
 		};
 
 		modeloConsultas =
