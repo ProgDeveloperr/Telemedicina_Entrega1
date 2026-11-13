@@ -983,9 +983,7 @@ public class LoginFrame extends JFrame {
 			return;
 		}
 
-		mostrarBienvenidaConImagen(
-				logueado
-		);
+		
 
 		dispose();
 
@@ -1024,55 +1022,7 @@ public class LoginFrame extends JFrame {
 	 * BIENVENIDA
 	 * =========================================================
 	 */
-	private void mostrarBienvenidaConImagen(
-			Usuario usuario) {
-
-		String rutaIcono;
-
-		switch (usuario.getTipoUsuario()) {
-
-		case EMPLEADO:
-
-			rutaIcono =
-					"/resources/imagenes/ok_empleado.png";
-
-			break;
-
-		case PROFESIONAL:
-
-			rutaIcono =
-					"/resources/imagenes/ok_profesional.png";
-
-			break;
-
-		default:
-
-			rutaIcono =
-					"/resources/imagenes/icono_app.png";
-
-			break;
-		}
-
-		ImageIcon icono =
-				cargarIconoEscalado(
-						rutaIcono,
-						150,
-						150
-				);
-
-		JOptionPane.showMessageDialog(
-				this,
-				"Bienvenido: "
-						+ usuario.getNombre()
-						+ " "
-						+ usuario.getApellido()
-						+ "\nPerfil: "
-						+ usuario.getTipoUsuario(),
-				"Inicio de sesion correcto",
-				JOptionPane.INFORMATION_MESSAGE,
-				icono
-		);
-	}
+	
 
 	/*
 	 * =========================================================
@@ -1123,42 +1073,7 @@ public class LoginFrame extends JFrame {
 	 * IMAGENES
 	 * =========================================================
 	 */
-	private ImageIcon cargarIconoEscalado(
-			String ruta,
-			int ancho,
-			int alto) {
-
-		URL url =
-				getClass().getResource(
-						ruta
-				);
-
-		if (url == null) {
-
-			System.out.println(
-					"No se encontro la imagen: "
-							+ ruta
-			);
-
-			return null;
-		}
-
-		Image imagen =
-				new ImageIcon(
-						url
-				)
-						.getImage()
-						.getScaledInstance(
-								ancho,
-								alto,
-								Image.SCALE_SMOOTH
-						);
-
-		return new ImageIcon(
-				imagen
-		);
-	}
-
+	
 	/*
 	 * =========================================================
 	 * ICONO APP
