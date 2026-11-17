@@ -1576,7 +1576,8 @@ public class ProfesionalesFrame extends JFrame {
 		String matricula =
 				campoMatricula
 						.getText()
-						.trim();
+						.trim()
+						.toUpperCase();
 
 		String especialidad =
 				campoEspecialidad
@@ -1607,7 +1608,67 @@ public class ProfesionalesFrame extends JFrame {
 
 		/*
 		 * =====================================================
-		 * VALIDACION:
+		 * VALIDACION DE CONTRASEÑA
+		 * =====================================================
+		 */
+		int bytesClave =
+				clave
+						.getBytes(
+								java.nio.charset.StandardCharsets.UTF_8
+						)
+						.length;
+
+		if (bytesClave < 8) {
+
+			JOptionPane.showMessageDialog(
+					this,
+					"La contraseña debe tener al menos 8 caracteres.",
+					"Contraseña demasiado corta",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			campoClave.requestFocus();
+
+			return;
+		}
+
+		if (bytesClave > 72) {
+
+			JOptionPane.showMessageDialog(
+					this,
+					"La contraseña no puede superar los 72 bytes.",
+					"Contraseña demasiado larga",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			campoClave.requestFocus();
+
+			return;
+		}
+
+		/*
+		 * =====================================================
+		 * VALIDACION DE MATRICULA
+		 * =====================================================
+		 */
+		if (!matricula.matches(
+				"[A-Z0-9-]{4,20}")) {
+
+			JOptionPane.showMessageDialog(
+					this,
+					"La matricula debe tener entre 4 y 20 caracteres.\n"
+							+ "Solo puede contener letras, numeros y guiones.",
+					"Matricula invalida",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			campoMatricula.requestFocus();
+
+			return;
+		}
+
+		/*
+		 * =====================================================
 		 * USUARIO DUPLICADO
 		 * =====================================================
 		 */
@@ -1630,7 +1691,6 @@ public class ProfesionalesFrame extends JFrame {
 
 		/*
 		 * =====================================================
-		 * VALIDACION:
 		 * MATRICULA DUPLICADA
 		 * =====================================================
 		 */
@@ -1709,10 +1769,6 @@ public class ProfesionalesFrame extends JFrame {
 
 			limpiarFormulario();
 
-			/*
-			 * Si habia una busqueda activa,
-			 * se limpia para mostrar el nuevo registro.
-			 */
 			campoBuscar.setText("");
 
 			cargarProfesionales();
