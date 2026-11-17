@@ -123,7 +123,13 @@ CREATE TABLE `turno` (
   `hora` time NOT NULL,
   `estado` enum('PENDIENTE','CONFIRMADO','CANCELADO','PRESENTE') NOT NULL DEFAULT 'PENDIENTE',
   `paciente_id` int(11) NOT NULL,
-  `disponibilidad_id` int(11) NOT NULL
+  `disponibilidad_id` int(11) NOT NULL,
+  `hora_activa` time GENERATED ALWAYS AS (
+    CASE
+      WHEN `estado` = 'CANCELADO' THEN NULL
+      ELSE `hora`
+    END
+  ) PERSISTENT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -200,7 +206,8 @@ ALTER TABLE `profesional`
 ALTER TABLE `turno`
   ADD PRIMARY KEY (`id_turno`),
   ADD KEY `fk_turno_paciente` (`paciente_id`),
-  ADD KEY `idx_turno_disponibilidad_hora` (`disponibilidad_id`,`hora`);
+  ADD KEY `idx_turno_disponibilidad_hora` (`disponibilidad_id`,`hora`),
+  ADD UNIQUE KEY `uq_turno_disponibilidad_hora_activa` (`disponibilidad_id`,`hora_activa`);
 
 --
 -- Indices de la tabla `usuario`

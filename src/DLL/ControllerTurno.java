@@ -6,6 +6,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.LinkedList;
 
 import BLL.Disponibilidad;
@@ -16,111 +18,286 @@ import repository.TurnoRepository;
 
 public class ControllerTurno implements TurnoRepository {
 
+	/*
+	 * Duracion fija de cada turno.
+	 *
+	 * Esto permite trabajar con intervalos reales:
+	 * un turno de 10:00 ocupa desde 10:00 hasta 10:30.
+	 */
+	private static final int DURACION_TURNO_MINUTOS = 30;
+
 	private Connection connection;
 
 	public ControllerTurno() {
 		connection = Conexion.getInstance().getConnection();
 	}
 
+	/*
+	 * =========================================================
+	 * REGISTRAR TURNO
+	 * =========================================================
+	 */
 	@Override
 	public boolean registrar(Turno turno) {
 
-		if (!validarTurno(turno)) {
+		if (!validarDatosBasicos(turno)) {
 			return false;
 		}
 
-		String sql = "INSERT INTO turno "
-				+ "(fecha, hora, estado, paciente_id, disponibilidad_id) "
-				+ "VALUES (?, ?, ?, ?, ?)";
-
-		try (PreparedStatement statement = connection.prepareStatement(sql)) {
-
-			statement.setDate(
-					1,
-					Date.valueOf(turno.getFecha())
-			);
-
-			statement.setTime(
-					2,
-					Time.valueOf(turno.getHora())
-			);
-
-			statement.setString(
-					3,
-					turno.getEstado().name()
-			);
-
-			statement.setInt(
-					4,
-					turno.getPaciente().getIdPaciente()
-			);
-
-			statement.setInt(
-					5,
-					turno.getDisponibilidad().getIdDisponibilidad()
-			);
-
-			int filasAfectadas = statement.executeUpdate();
-
-			return filasAfectadas > 0;
-
-		} catch (SQLException e) {
-			e.printStackTrace();
+		/*
+		 * Todo turno nuevo debe comenzar como PENDIENTE.
+		 *
+		 * No se permite crear directamente un turno
+		 * CONFIRMADO, PRESENTE o CANCELADO.
+		 */
+		if (turno.getEstado() != EstadoTurno.PENDIENTE) {
+			return false;
 		}
 
-		return false;
+		if (connection == null) {
+			return false;
+		}
+
+		/*
+		 * La conexion actual sigue siendo compartida.
+		 *
+		 * Mientras no refactoricemos Conexion, sincronizamos
+		 * esta operacion para evitar que dos ControllerTurno
+		 * de la misma aplicacion alteren simultaneamente
+		 * la misma transaccion.
+		 */
+		synchronized (connection) {
+
+			boolean autoCommitOriginal = true;
+
+			try {
+
+				autoCommitOriginal =
+						connection.getAutoCommit();
+
+				connection.setAutoCommit(false);
+
+				/*
+				 * Bloqueamos la disponibilidad.
+				 *
+				 * Si dos recepcionistas intentan reservar
+				 * sobre la misma disponibilidad al mismo
+				 * tiempo, uno debera esperar al otro.
+				 */
+				Disponibilidad disponibilidad =
+						obtenerDisponibilidadPorId(
+								connection,
+								turno
+										.getDisponibilidad()
+										.getIdDisponibilidad(),
+								true
+						);
+
+				if (!validarTurnoContraDisponibilidad(
+						turno,
+						disponibilidad)) {
+
+					rollbackSilencioso();
+
+					return false;
+				}
+
+				/*
+				 * La comprobacion se realiza dentro de la
+				 * misma transaccion y con bloqueo.
+				 */
+				if (horarioOcupadoInterno(
+						connection,
+						disponibilidad
+								.getIdDisponibilidad(),
+						turno.getHora(),
+						0,
+						true)) {
+
+					rollbackSilencioso();
+
+					return false;
+				}
+
+				String sql =
+						"INSERT INTO turno "
+						+ "(fecha, hora, estado, paciente_id, disponibilidad_id) "
+						+ "VALUES (?, ?, ?, ?, ?)";
+
+				try (PreparedStatement statement =
+						connection.prepareStatement(sql)) {
+
+					statement.setDate(
+							1,
+							Date.valueOf(
+									turno.getFecha()
+							)
+					);
+
+					statement.setTime(
+							2,
+							Time.valueOf(
+									turno.getHora()
+							)
+					);
+
+					statement.setString(
+							3,
+							turno
+									.getEstado()
+									.name()
+					);
+
+					statement.setInt(
+							4,
+							turno
+									.getPaciente()
+									.getIdPaciente()
+					);
+
+					statement.setInt(
+							5,
+							turno
+									.getDisponibilidad()
+									.getIdDisponibilidad()
+					);
+
+					int filasAfectadas =
+							statement.executeUpdate();
+
+					if (filasAfectadas != 1) {
+
+						rollbackSilencioso();
+
+						return false;
+					}
+				}
+
+				connection.commit();
+
+				return true;
+
+			} catch (SQLException e) {
+
+				rollbackSilencioso();
+
+				System.err.println(
+						"Error al registrar el turno."
+				);
+
+				e.printStackTrace();
+
+				return false;
+
+			} finally {
+
+				restaurarAutoCommit(
+						autoCommitOriginal
+				);
+			}
+		}
 	}
 
+	/*
+	 * =========================================================
+	 * BUSCAR TURNO
+	 * =========================================================
+	 */
 	@Override
 	public Turno buscarPorId(int idTurno) {
 
-		String sql = consultaBase()
+		if (connection == null
+				|| idTurno <= 0) {
+
+			return null;
+		}
+
+		String sql =
+				consultaBase()
 				+ " WHERE t.id_turno = ?";
 
-		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+		try (PreparedStatement statement =
+				connection.prepareStatement(sql)) {
 
-			statement.setInt(1, idTurno);
+			statement.setInt(
+					1,
+					idTurno
+			);
 
-			try (ResultSet result = statement.executeQuery()) {
+			try (ResultSet result =
+					statement.executeQuery()) {
 
 				if (result.next()) {
-					return crearTurnoDesdeResultSet(result);
+
+					return crearTurnoDesdeResultSet(
+							result
+					);
 				}
 			}
 
 		} catch (SQLException e) {
+
+			System.err.println(
+					"Error al buscar el turno."
+			);
+
 			e.printStackTrace();
 		}
 
 		return null;
 	}
 
+	/*
+	 * =========================================================
+	 * OBTENER TODOS
+	 * =========================================================
+	 */
 	@Override
 	public LinkedList<Turno> obtenerTodos() {
 
 		LinkedList<Turno> turnos =
 				new LinkedList<Turno>();
 
-		String sql = consultaBase()
+		if (connection == null) {
+			return turnos;
+		}
+
+		String sql =
+				consultaBase()
 				+ " ORDER BY t.fecha, t.hora";
 
-		try (PreparedStatement statement = connection.prepareStatement(sql);
-				ResultSet result = statement.executeQuery()) {
+		try (PreparedStatement statement =
+				connection.prepareStatement(sql);
+
+				ResultSet result =
+						statement.executeQuery()) {
 
 			while (result.next()) {
 
 				turnos.add(
-						crearTurnoDesdeResultSet(result)
+						crearTurnoDesdeResultSet(
+								result
+						)
 				);
 			}
 
 		} catch (SQLException e) {
+
+			System.err.println(
+					"Error al obtener los turnos."
+			);
+
 			e.printStackTrace();
 		}
 
 		return turnos;
 	}
 
+	/*
+	 * =========================================================
+	 * OBTENER POR PROFESIONAL
+	 * =========================================================
+	 */
 	@Override
 	public LinkedList<Turno> obtenerPorProfesional(
 			int idProfesional) {
@@ -128,120 +305,426 @@ public class ControllerTurno implements TurnoRepository {
 		LinkedList<Turno> turnos =
 				new LinkedList<Turno>();
 
-		String sql = consultaBase()
+		if (connection == null
+				|| idProfesional <= 0) {
+
+			return turnos;
+		}
+
+		String sql =
+				consultaBase()
 				+ " WHERE d.profesional_id = ? "
 				+ "ORDER BY t.fecha, t.hora";
 
-		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+		try (PreparedStatement statement =
+				connection.prepareStatement(sql)) {
 
-			statement.setInt(1, idProfesional);
+			statement.setInt(
+					1,
+					idProfesional
+			);
 
-			try (ResultSet result = statement.executeQuery()) {
+			try (ResultSet result =
+					statement.executeQuery()) {
 
 				while (result.next()) {
 
 					turnos.add(
-							crearTurnoDesdeResultSet(result)
+							crearTurnoDesdeResultSet(
+									result
+							)
 					);
 				}
 			}
 
 		} catch (SQLException e) {
+
+			System.err.println(
+					"Error al obtener los turnos del profesional."
+			);
+
 			e.printStackTrace();
 		}
 
 		return turnos;
 	}
 
+	/*
+	 * =========================================================
+	 * MODIFICAR TURNO
+	 * =========================================================
+	 */
 	@Override
 	public boolean modificar(Turno turno) {
 
-		if (!validarTurno(turno)) {
+		if (!validarDatosBasicos(turno)
+				|| turno.getIdTurno() <= 0
+				|| connection == null) {
+
 			return false;
 		}
 
-		String sql = "UPDATE turno "
-				+ "SET fecha = ?, "
-				+ "hora = ?, "
-				+ "paciente_id = ?, "
-				+ "disponibilidad_id = ? "
-				+ "WHERE id_turno = ?";
+		synchronized (connection) {
 
-		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			boolean autoCommitOriginal = true;
 
-			statement.setDate(
-					1,
-					Date.valueOf(turno.getFecha())
-			);
+			try {
 
-			statement.setTime(
-					2,
-					Time.valueOf(turno.getHora())
-			);
+				autoCommitOriginal =
+						connection.getAutoCommit();
 
-			statement.setInt(
-					3,
-					turno.getPaciente().getIdPaciente()
-			);
+				connection.setAutoCommit(false);
 
-			statement.setInt(
-					4,
-					turno.getDisponibilidad().getIdDisponibilidad()
-			);
+				/*
+				 * Bloqueamos primero la disponibilidad destino.
+				 */
+				Disponibilidad disponibilidad =
+						obtenerDisponibilidadPorId(
+								connection,
+								turno
+										.getDisponibilidad()
+										.getIdDisponibilidad(),
+								true
+						);
 
-			statement.setInt(
-					5,
-					turno.getIdTurno()
-			);
+				if (disponibilidad == null) {
 
-			int filasAfectadas = statement.executeUpdate();
+					rollbackSilencioso();
 
-			return filasAfectadas > 0;
+					return false;
+				}
 
-		} catch (SQLException e) {
-			e.printStackTrace();
+				/*
+				 * Bloqueamos tambien el turno que se modifica.
+				 */
+				EstadoTurno estadoActual =
+						obtenerEstadoTurno(
+								connection,
+								turno.getIdTurno(),
+								true
+						);
+
+				if (estadoActual == null) {
+
+					rollbackSilencioso();
+
+					return false;
+				}
+
+				/*
+				 * Solo pueden modificarse turnos que todavia
+				 * esten PENDIENTES o CONFIRMADOS.
+				 *
+				 * Un PRESENTE o CANCELADO queda cerrado.
+				 */
+				if (estadoActual != EstadoTurno.PENDIENTE
+						&& estadoActual != EstadoTurno.CONFIRMADO) {
+
+					rollbackSilencioso();
+
+					return false;
+				}
+
+				if (!validarTurnoContraDisponibilidad(
+						turno,
+						disponibilidad)) {
+
+					rollbackSilencioso();
+
+					return false;
+				}
+
+				/*
+				 * Se controla el solapamiento ignorando
+				 * el propio turno que estamos editando.
+				 */
+				if (horarioOcupadoInterno(
+						connection,
+						disponibilidad
+								.getIdDisponibilidad(),
+						turno.getHora(),
+						turno.getIdTurno(),
+						true)) {
+
+					rollbackSilencioso();
+
+					return false;
+				}
+
+				String sql =
+						"UPDATE turno "
+						+ "SET fecha = ?, "
+						+ "hora = ?, "
+						+ "paciente_id = ?, "
+						+ "disponibilidad_id = ? "
+						+ "WHERE id_turno = ?";
+
+				try (PreparedStatement statement =
+						connection.prepareStatement(sql)) {
+
+					statement.setDate(
+							1,
+							Date.valueOf(
+									turno.getFecha()
+							)
+					);
+
+					statement.setTime(
+							2,
+							Time.valueOf(
+									turno.getHora()
+							)
+					);
+
+					statement.setInt(
+							3,
+							turno
+									.getPaciente()
+									.getIdPaciente()
+					);
+
+					statement.setInt(
+							4,
+							turno
+									.getDisponibilidad()
+									.getIdDisponibilidad()
+					);
+
+					statement.setInt(
+							5,
+							turno.getIdTurno()
+					);
+
+					int filasAfectadas =
+							statement.executeUpdate();
+
+					if (filasAfectadas != 1) {
+
+						rollbackSilencioso();
+
+						return false;
+					}
+				}
+
+				connection.commit();
+
+				return true;
+
+			} catch (SQLException e) {
+
+				rollbackSilencioso();
+
+				System.err.println(
+						"Error al modificar el turno."
+				);
+
+				e.printStackTrace();
+
+				return false;
+
+			} finally {
+
+				restaurarAutoCommit(
+						autoCommitOriginal
+				);
+			}
 		}
-
-		return false;
 	}
 
+	/*
+	 * =========================================================
+	 * ACTUALIZAR ESTADO
+	 * =========================================================
+	 */
 	@Override
 	public boolean actualizarEstado(
 			int idTurno,
-			EstadoTurno estado) {
+			EstadoTurno nuevoEstado) {
 
-		if (estado == null) {
+		if (connection == null
+				|| idTurno <= 0
+				|| nuevoEstado == null) {
+
 			return false;
 		}
 
-		String sql = "UPDATE turno "
-				+ "SET estado = ? "
-				+ "WHERE id_turno = ?";
+		/*
+		 * Las transiciones se validan directamente en el
+		 * UPDATE para que la operacion sea atomica.
+		 *
+		 * TRANSICIONES VALIDAS:
+		 *
+		 * PENDIENTE  -> CONFIRMADO
+		 * PENDIENTE  -> CANCELADO
+		 * CONFIRMADO -> PRESENTE
+		 * CONFIRMADO -> CANCELADO
+		 *
+		 * PRESENTE y CANCELADO son estados finales.
+		 */
 
-		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+		String sql;
 
-			statement.setString(
-					1,
-					estado.name()
-			);
+		switch (nuevoEstado) {
+
+		case CONFIRMADO:
+
+			sql =
+					"UPDATE turno "
+					+ "SET estado = 'CONFIRMADO' "
+					+ "WHERE id_turno = ? "
+					+ "AND estado = 'PENDIENTE'";
+
+			break;
+
+		case PRESENTE:
+
+			sql =
+					"UPDATE turno "
+					+ "SET estado = 'PRESENTE' "
+					+ "WHERE id_turno = ? "
+					+ "AND estado = 'CONFIRMADO'";
+
+			break;
+
+		case CANCELADO:
+
+			sql =
+					"UPDATE turno "
+					+ "SET estado = 'CANCELADO' "
+					+ "WHERE id_turno = ? "
+					+ "AND estado IN "
+					+ "('PENDIENTE', 'CONFIRMADO')";
+
+			break;
+
+		case PENDIENTE:
+		default:
+
+			/*
+			 * No se permite retroceder a PENDIENTE.
+			 */
+			return false;
+		}
+
+		try (PreparedStatement statement =
+				connection.prepareStatement(sql)) {
 
 			statement.setInt(
-					2,
+					1,
 					idTurno
 			);
 
-			int filasAfectadas = statement.executeUpdate();
+			int filasAfectadas =
+					statement.executeUpdate();
 
-			return filasAfectadas > 0;
+			return filasAfectadas == 1;
 
 		} catch (SQLException e) {
-			e.printStackTrace();
-		}
 
-		return false;
+			System.err.println(
+					"Error al actualizar el estado del turno."
+			);
+
+			e.printStackTrace();
+
+			return false;
+		}
 	}
 
-	private boolean validarTurno(Turno turno) {
+	/*
+	 * =========================================================
+	 * HORARIO OCUPADO
+	 * =========================================================
+	 */
+	@Override
+	public boolean horarioOcupado(
+			int idDisponibilidad,
+			LocalTime hora) {
+
+		if (connection == null
+				|| idDisponibilidad <= 0
+				|| hora == null) {
+
+			/*
+			 * FAIL CLOSED:
+			 * ante datos invalidos, bloqueamos la operacion.
+			 */
+			return true;
+		}
+
+		try {
+
+			return horarioOcupadoInterno(
+					connection,
+					idDisponibilidad,
+					hora,
+					0,
+					false
+			);
+
+		} catch (SQLException e) {
+
+			System.err.println(
+					"Error al verificar el horario del turno."
+			);
+
+			e.printStackTrace();
+
+			/*
+			 * FAIL CLOSED.
+			 */
+			return true;
+		}
+	}
+
+	/*
+	 * =========================================================
+	 * HORARIO OCUPADO EXCLUYENDO TURNO
+	 * =========================================================
+	 */
+	@Override
+	public boolean horarioOcupadoExceptoTurno(
+			int idDisponibilidad,
+			LocalTime hora,
+			int idTurno) {
+
+		if (connection == null
+				|| idDisponibilidad <= 0
+				|| hora == null
+				|| idTurno <= 0) {
+
+			return true;
+		}
+
+		try {
+
+			return horarioOcupadoInterno(
+					connection,
+					idDisponibilidad,
+					hora,
+					idTurno,
+					false
+			);
+
+		} catch (SQLException e) {
+
+			System.err.println(
+					"Error al verificar el horario del turno."
+			);
+
+			e.printStackTrace();
+
+			return true;
+		}
+	}
+
+	/*
+	 * =========================================================
+	 * VALIDACION BASICA
+	 * =========================================================
+	 */
+	private boolean validarDatosBasicos(
+			Turno turno) {
 
 		if (turno == null
 				|| turno.getFecha() == null
@@ -253,31 +736,253 @@ public class ControllerTurno implements TurnoRepository {
 			return false;
 		}
 
-		Disponibilidad disponibilidad =
-				obtenerDisponibilidadPorId(
-						turno.getDisponibilidad()
-								.getIdDisponibilidad()
-				);
+		if (turno
+				.getPaciente()
+				.getIdPaciente() <= 0) {
+
+			return false;
+		}
+
+		if (turno
+				.getDisponibilidad()
+				.getIdDisponibilidad() <= 0) {
+
+			return false;
+		}
+
+		return true;
+	}
+
+	/*
+	 * =========================================================
+	 * VALIDAR TURNO CONTRA DISPONIBILIDAD
+	 * =========================================================
+	 */
+	private boolean validarTurnoContraDisponibilidad(
+			Turno turno,
+			Disponibilidad disponibilidad) {
 
 		if (disponibilidad == null) {
 			return false;
 		}
 
-		if (!turno.getFecha().equals(
-				disponibilidad.getFecha())) {
+		/*
+		 * La fecha del turno debe coincidir con
+		 * la fecha de la disponibilidad.
+		 */
+		if (!turno
+				.getFecha()
+				.equals(
+						disponibilidad.getFecha()
+				)) {
 
 			return false;
 		}
 
-		return disponibilidad.esHorarioValido(
-				turno.getHora()
-		);
+		LocalDate hoy =
+				LocalDate.now();
+
+		/*
+		 * No se permiten turnos en fechas pasadas.
+		 */
+		if (turno
+				.getFecha()
+				.isBefore(
+						hoy
+				)) {
+
+			return false;
+		}
+
+		/*
+		 * Si el turno es para hoy, su hora tiene que
+		 * estar todavia en el futuro.
+		 *
+		 * Esto corrige el caso señalado por el profesor:
+		 * antes solo se comparaba LocalDate.
+		 */
+		if (turno
+				.getFecha()
+				.isEqual(
+						hoy
+				)
+				&& !turno
+						.getHora()
+						.isAfter(
+								LocalTime.now()
+						)) {
+
+			return false;
+		}
+
+		LocalTime inicioTurno =
+				turno.getHora();
+
+		LocalTime finTurno =
+				inicioTurno.plusMinutes(
+						DURACION_TURNO_MINUTOS
+				);
+
+		/*
+		 * Proteccion ante un eventual desborde de medianoche.
+		 */
+		if (!finTurno.isAfter(
+				inicioTurno)) {
+
+			return false;
+		}
+
+		/*
+		 * El turno no puede comenzar antes
+		 * de la disponibilidad.
+		 */
+		if (inicioTurno.isBefore(
+				disponibilidad.getHoraInicio())) {
+
+			return false;
+		}
+
+		/*
+		 * El turno completo debe entrar dentro de
+		 * la disponibilidad.
+		 *
+		 * Ejemplo:
+		 *
+		 * disponibilidad: 10:00 - 14:00
+		 *
+		 * 13:30 -> valido, termina 14:00
+		 * 13:45 -> invalido, termina 14:15
+		 */
+		if (finTurno.isAfter(
+				disponibilidad.getHoraFin())) {
+
+			return false;
+		}
+
+		return true;
 	}
 
-	private Disponibilidad obtenerDisponibilidadPorId(
-			int idDisponibilidad) {
+	/*
+	 * =========================================================
+	 * HORARIO OCUPADO INTERNO
+	 * =========================================================
+	 */
+	private boolean horarioOcupadoInterno(
+			Connection conexion,
+			int idDisponibilidad,
+			LocalTime nuevaHora,
+			int idTurnoExcluir,
+			boolean bloquear)
+			throws SQLException {
 
-		String sql = "SELECT "
+		String sql =
+				"SELECT id_turno, hora "
+				+ "FROM turno "
+				+ "WHERE disponibilidad_id = ? "
+				+ "AND estado <> 'CANCELADO' ";
+
+		if (idTurnoExcluir > 0) {
+
+			sql +=
+					"AND id_turno <> ? ";
+		}
+
+		if (bloquear) {
+
+			sql +=
+					"FOR UPDATE";
+		}
+
+		try (PreparedStatement statement =
+				conexion.prepareStatement(sql)) {
+
+			statement.setInt(
+					1,
+					idDisponibilidad
+			);
+
+			if (idTurnoExcluir > 0) {
+
+				statement.setInt(
+						2,
+						idTurnoExcluir
+				);
+			}
+
+			try (ResultSet result =
+					statement.executeQuery()) {
+
+				while (result.next()) {
+
+					LocalTime horaExistente =
+							result
+									.getTime(
+											"hora"
+									)
+									.toLocalTime();
+
+					if (horariosSeSuperponen(
+							nuevaHora,
+							horaExistente)) {
+
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/*
+	 * =========================================================
+	 * SUPERPOSICION ENTRE TURNOS
+	 * =========================================================
+	 */
+	private boolean horariosSeSuperponen(
+			LocalTime horaA,
+			LocalTime horaB) {
+
+		LocalTime finA =
+				horaA.plusMinutes(
+						DURACION_TURNO_MINUTOS
+				);
+
+		LocalTime finB =
+				horaB.plusMinutes(
+						DURACION_TURNO_MINUTOS
+				);
+
+		/*
+		 * Dos intervalos se superponen cuando:
+		 *
+		 * inicioA < finB
+		 * Y
+		 * finA > inicioB
+		 *
+		 * Ejemplos:
+		 *
+		 * 10:00 y 10:01 -> superposicion
+		 * 10:00 y 10:29 -> superposicion
+		 * 10:00 y 10:30 -> NO se superponen
+		 */
+		return horaA.isBefore(finB)
+				&& finA.isAfter(horaB);
+	}
+
+	/*
+	 * =========================================================
+	 * OBTENER DISPONIBILIDAD
+	 * =========================================================
+	 */
+	private Disponibilidad obtenerDisponibilidadPorId(
+			Connection conexion,
+			int idDisponibilidad,
+			boolean bloquear)
+			throws SQLException {
+
+		String sql =
+				"SELECT "
 				+ "id_disponibilidad, "
 				+ "fecha, "
 				+ "hora_inicio, "
@@ -286,14 +991,22 @@ public class ControllerTurno implements TurnoRepository {
 				+ "FROM disponibilidad "
 				+ "WHERE id_disponibilidad = ?";
 
-		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+		if (bloquear) {
+
+			sql +=
+					" FOR UPDATE";
+		}
+
+		try (PreparedStatement statement =
+				conexion.prepareStatement(sql)) {
 
 			statement.setInt(
 					1,
 					idDisponibilidad
 			);
 
-			try (ResultSet result = statement.executeQuery()) {
+			try (ResultSet result =
+					statement.executeQuery()) {
 
 				if (result.next()) {
 
@@ -316,85 +1029,111 @@ public class ControllerTurno implements TurnoRepository {
 					);
 				}
 			}
-
-		} catch (SQLException e) {
-			e.printStackTrace();
 		}
 
 		return null;
 	}
 
-	
-	@Override
-	public boolean horarioOcupado(
-			int idDisponibilidad,
-			java.time.LocalTime hora) {
+	/*
+	 * =========================================================
+	 * OBTENER ESTADO DEL TURNO
+	 * =========================================================
+	 */
+	private EstadoTurno obtenerEstadoTurno(
+			Connection conexion,
+			int idTurno,
+			boolean bloquear)
+			throws SQLException {
 
-		String sql = "SELECT id_turno "
+		String sql =
+				"SELECT estado "
 				+ "FROM turno "
-				+ "WHERE disponibilidad_id = ? "
-				+ "AND hora = ? "
-				+ "AND estado <> 'CANCELADO'";
+				+ "WHERE id_turno = ?";
 
-		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+		if (bloquear) {
 
-			statement.setInt(1, idDisponibilidad);
-
-			statement.setTime(
-					2,
-					Time.valueOf(hora)
-			);
-
-			try (ResultSet result = statement.executeQuery()) {
-				return result.next();
-			}
-
-		} catch (SQLException e) {
-			e.printStackTrace();
+			sql +=
+					" FOR UPDATE";
 		}
 
-		return false;
-	}
-	
-	
-	
-	@Override
-	public boolean horarioOcupadoExceptoTurno(
-			int idDisponibilidad,
-			java.time.LocalTime hora,
-			int idTurno) {
+		try (PreparedStatement statement =
+				conexion.prepareStatement(sql)) {
 
-		String sql = "SELECT id_turno "
-				+ "FROM turno "
-				+ "WHERE disponibilidad_id = ? "
-				+ "AND hora = ? "
-				+ "AND id_turno <> ? "
-				+ "AND estado <> 'CANCELADO'";
-
-		try (PreparedStatement statement = connection.prepareStatement(sql)) {
-
-			statement.setInt(1, idDisponibilidad);
-
-			statement.setTime(
-					2,
-					Time.valueOf(hora)
+			statement.setInt(
+					1,
+					idTurno
 			);
 
-			statement.setInt(3, idTurno);
+			try (ResultSet result =
+					statement.executeQuery()) {
 
-			try (ResultSet result = statement.executeQuery()) {
-				return result.next();
+				if (result.next()) {
+
+					return EstadoTurno.valueOf(
+							result.getString(
+									"estado"
+							)
+					);
+				}
 			}
-
-		} catch (SQLException e) {
-			e.printStackTrace();
 		}
 
-		return false;
+		return null;
 	}
-	
-	
-	
+
+	/*
+	 * =========================================================
+	 * TRANSACCIONES
+	 * =========================================================
+	 */
+	private void rollbackSilencioso() {
+
+		if (connection == null) {
+			return;
+		}
+
+		try {
+
+			connection.rollback();
+
+		} catch (SQLException e) {
+
+			System.err.println(
+					"No se pudo realizar rollback."
+			);
+
+			e.printStackTrace();
+		}
+	}
+
+	private void restaurarAutoCommit(
+			boolean autoCommitOriginal) {
+
+		if (connection == null) {
+			return;
+		}
+
+		try {
+
+			connection.setAutoCommit(
+					autoCommitOriginal
+			);
+
+		} catch (SQLException e) {
+
+			System.err.println(
+					"No se pudo restaurar el autocommit."
+			);
+
+			e.printStackTrace();
+		}
+	}
+
+	/*
+	 * =========================================================
+	 * CONSULTA BASE
+	 * =========================================================
+	 */
 	private String consultaBase() {
 
 		return "SELECT "
@@ -419,16 +1158,33 @@ public class ControllerTurno implements TurnoRepository {
 				+ "ON t.disponibilidad_id = d.id_disponibilidad";
 	}
 
+	/*
+	 * =========================================================
+	 * MAPEO RESULTSET -> TURNO
+	 * =========================================================
+	 */
 	private Turno crearTurnoDesdeResultSet(
-			ResultSet result) throws SQLException {
+			ResultSet result)
+			throws SQLException {
 
-		Paciente paciente = new Paciente(
-				result.getInt("id_paciente"),
-				result.getString("dni"),
-				result.getString("paciente_nombre"),
-				result.getString("paciente_apellido"),
-				result.getString("telefono")
-		);
+		Paciente paciente =
+				new Paciente(
+						result.getInt(
+								"id_paciente"
+						),
+						result.getString(
+								"dni"
+						),
+						result.getString(
+								"paciente_nombre"
+						),
+						result.getString(
+								"paciente_apellido"
+						),
+						result.getString(
+								"telefono"
+						)
+				);
 
 		Disponibilidad disponibilidad =
 				new Disponibilidad(
@@ -450,7 +1206,9 @@ public class ControllerTurno implements TurnoRepository {
 				);
 
 		return new Turno(
-				result.getInt("id_turno"),
+				result.getInt(
+						"id_turno"
+				),
 				result.getDate(
 						"turno_fecha"
 				).toLocalDate(),
@@ -458,7 +1216,9 @@ public class ControllerTurno implements TurnoRepository {
 						"turno_hora"
 				).toLocalTime(),
 				EstadoTurno.valueOf(
-						result.getString("estado")
+						result.getString(
+								"estado"
+						)
 				),
 				paciente,
 				disponibilidad
