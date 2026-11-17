@@ -1585,7 +1585,7 @@ public class PacientesFrame extends JFrame {
 
 		/*
 		 * =====================================================
-		 * DNI SOLO NUMEROS
+		 * VALIDACION DEL DNI
 		 * =====================================================
 		 */
 		if (!dni.matches("\\d+")) {
@@ -1598,6 +1598,53 @@ public class PacientesFrame extends JFrame {
 			);
 
 			campoDni.requestFocus();
+
+			return;
+		}
+
+		if (!dni.matches("\\d{7,8}")) {
+
+			JOptionPane.showMessageDialog(
+					this,
+					"El DNI debe tener entre 7 y 8 digitos.",
+					"DNI invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			campoDni.requestFocus();
+
+			return;
+		}
+
+		/*
+		 * =====================================================
+		 * VALIDACION DEL TELEFONO
+		 * =====================================================
+		 */
+		if (!telefono.matches("\\d+")) {
+
+			JOptionPane.showMessageDialog(
+					this,
+					"El telefono debe contener solamente numeros.",
+					"Telefono invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			campoTelefono.requestFocus();
+
+			return;
+		}
+
+		if (!telefono.matches("\\d{8,15}")) {
+
+			JOptionPane.showMessageDialog(
+					this,
+					"El telefono debe tener entre 8 y 15 digitos.",
+					"Telefono invalido",
+					JOptionPane.WARNING_MESSAGE
+			);
+
+			campoTelefono.requestFocus();
 
 			return;
 		}
@@ -1733,7 +1780,9 @@ public class PacientesFrame extends JFrame {
 								+ " "
 								+ apellido
 								+ "\nDNI: "
-								+ dni,
+								+ dni
+								+ "\nTelefono: "
+								+ telefono,
 						"Confirmar modificacion",
 						JOptionPane.YES_NO_OPTION,
 						JOptionPane.QUESTION_MESSAGE
