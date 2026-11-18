@@ -597,6 +597,32 @@ y se abrirá `LoginFrame`.
 
 ---
 
+## Credenciales de prueba
+
+La base de datos incluida en el proyecto contiene cuentas de demostración para evaluar ambos perfiles del sistema.
+
+### Recepción
+
+```text
+Usuario: recepcion
+Contraseña: 1234
+```
+
+Esta cuenta permite acceder a la gestión de pacientes, profesionales, turnos y consultas e información.
+
+### Profesional
+
+```text
+Usuario: laura
+Contraseña: 1234
+```
+
+Corresponde a **Laura Gomez**, profesional de **Pediatría** con matrícula **MP67890**. Esta cuenta permite acceder a disponibilidad, agenda de turnos, registro de retrasos, registro de consultas e historial clínico.
+
+> Estas credenciales corresponden exclusivamente a usuarios de demostración incluidos en la base de datos académica.
+
+---
+
 ## Flujo general
 
 ```text
