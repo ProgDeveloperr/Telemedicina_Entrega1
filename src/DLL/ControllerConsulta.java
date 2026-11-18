@@ -20,14 +20,25 @@ public class ControllerConsulta
 	private Connection connection;
 
 	public ControllerConsulta() {
+
 		connection =
-				Conexion.getInstance().getConnection();
+				Conexion
+						.getInstance()
+						.getConnection();
 	}
 
+	/*
+	 * =========================================================
+	 * REGISTRAR CONSULTA
+	 * =========================================================
+	 */
 	@Override
-	public boolean registrar(Consulta consulta) {
+	public boolean registrar(
+			Consulta consulta) {
 
-		if (!validarConsulta(consulta)) {
+		if (!validarConsulta(
+				consulta)) {
+
 			return false;
 		}
 
@@ -45,49 +56,97 @@ public class ControllerConsulta
 			statement.setTimestamp(
 					1,
 					Timestamp.valueOf(
-							consulta.getFechaHoraAtencion()
+							consulta
+									.getFechaHoraAtencion()
 					)
 			);
 
 			statement.setString(
 					2,
-					consulta.getObservaciones()
+					consulta
+							.getObservaciones()
+							.trim()
 			);
+
+			String seguimiento =
+					consulta.getSeguimiento();
+
+			if (seguimiento != null) {
+
+				seguimiento =
+						seguimiento.trim();
+			}
 
 			statement.setString(
 					3,
-					consulta.getSeguimiento()
+					seguimiento
 			);
 
 			statement.setInt(
 					4,
-					consulta.getTurno().getIdTurno()
+					consulta
+							.getTurno()
+							.getIdTurno()
 			);
 
 			int filasAfectadas =
 					statement.executeUpdate();
 
-			return filasAfectadas > 0;
+			return filasAfectadas == 1;
 
 		} catch (SQLException e) {
-			e.printStackTrace();
-		}
 
-		return false;
+			/*
+			 * La base tambien posee UNIQUE(turno_id).
+			 *
+			 * Incluso ante dos intentos concurrentes,
+			 * MariaDB impide registrar dos consultas
+			 * para el mismo turno.
+			 */
+			System.err.println(
+					"Error al registrar la consulta."
+			);
+
+			e.printStackTrace();
+
+			return false;
+		}
 	}
 
+	/*
+	 * =========================================================
+	 * EXISTE CONSULTA POR TURNO
+	 * =========================================================
+	 */
 	@Override
-	public boolean existePorTurno(int idTurno) {
+	public boolean existePorTurno(
+			int idTurno) {
+
+		/*
+		 * FAIL CLOSED:
+		 *
+		 * Si no podemos comprobar la existencia,
+		 * bloqueamos el registro.
+		 */
+		if (connection == null
+				|| idTurno <= 0) {
+
+			return true;
+		}
 
 		String sql =
 				"SELECT id_consulta "
 				+ "FROM consulta "
-				+ "WHERE turno_id = ?";
+				+ "WHERE turno_id = ? "
+				+ "LIMIT 1";
 
 		try (PreparedStatement statement =
 				connection.prepareStatement(sql)) {
 
-			statement.setInt(1, idTurno);
+			statement.setInt(
+					1,
+					idTurno
+			);
 
 			try (ResultSet result =
 					statement.executeQuery()) {
@@ -96,18 +155,43 @@ public class ControllerConsulta
 			}
 
 		} catch (SQLException e) {
-			e.printStackTrace();
-		}
 
-		return false;
+			System.err.println(
+					"Error al verificar si el turno "
+					+ "ya posee una consulta."
+			);
+
+			e.printStackTrace();
+
+			/*
+			 * Antes devolvia false.
+			 *
+			 * Eso podia interpretar un fallo SQL
+			 * como si no existiera una consulta.
+			 *
+			 * Ahora se bloquea la operacion.
+			 */
+			return true;
+		}
 	}
 
+	/*
+	 * =========================================================
+	 * OBTENER CONSULTAS POR PROFESIONAL
+	 * =========================================================
+	 */
 	@Override
 	public LinkedList<Consulta> obtenerPorProfesional(
 			int idProfesional) {
 
 		LinkedList<Consulta> consultas =
 				new LinkedList<Consulta>();
+
+		if (connection == null
+				|| idProfesional <= 0) {
+
+			return consultas;
+		}
 
 		String sql =
 				consultaBase()
@@ -136,18 +220,35 @@ public class ControllerConsulta
 			}
 
 		} catch (SQLException e) {
+
+			System.err.println(
+					"Error al obtener las consultas "
+					+ "del profesional."
+			);
+
 			e.printStackTrace();
 		}
 
 		return consultas;
 	}
 
+	/*
+	 * =========================================================
+	 * OBTENER CONSULTAS POR PACIENTE
+	 * =========================================================
+	 */
 	@Override
 	public LinkedList<Consulta> obtenerPorPaciente(
 			int idPaciente) {
 
 		LinkedList<Consulta> consultas =
 				new LinkedList<Consulta>();
+
+		if (connection == null
+				|| idPaciente <= 0) {
+
+			return consultas;
+		}
 
 		String sql =
 				consultaBase()
@@ -176,46 +277,91 @@ public class ControllerConsulta
 			}
 
 		} catch (SQLException e) {
+
+			System.err.println(
+					"Error al obtener las consultas "
+					+ "del paciente."
+			);
+
 			e.printStackTrace();
 		}
 
 		return consultas;
 	}
 
+	/*
+	 * =========================================================
+	 * VALIDAR CONSULTA
+	 * =========================================================
+	 */
 	private boolean validarConsulta(
 			Consulta consulta) {
 
-		if (consulta == null
+		if (connection == null
+				|| consulta == null
 				|| consulta.getFechaHoraAtencion() == null
 				|| consulta.getObservaciones() == null
-				|| consulta.getObservaciones()
-						.trim().isEmpty()
+				|| consulta
+						.getObservaciones()
+						.trim()
+						.isEmpty()
 				|| consulta.getTurno() == null
-				|| consulta.getTurno()
+				|| consulta
+						.getTurno()
 						.getIdTurno() <= 0) {
 
 			return false;
 		}
 
+		/*
+		 * Solamente un turno PRESENTE puede
+		 * generar una consulta.
+		 */
 		if (!turnoEstaPresente(
-				consulta.getTurno().getIdTurno())) {
+				consulta
+						.getTurno()
+						.getIdTurno())) {
 
 			return false;
 		}
 
-		return !existePorTurno(
-				consulta.getTurno().getIdTurno()
-		);
+		/*
+		 * Cada turno puede tener una unica consulta.
+		 *
+		 * existePorTurno funciona fail-closed:
+		 * ante un error SQL devuelve true.
+		 */
+		if (existePorTurno(
+				consulta
+						.getTurno()
+						.getIdTurno())) {
+
+			return false;
+		}
+
+		return true;
 	}
 
+	/*
+	 * =========================================================
+	 * VALIDAR ESTADO PRESENTE
+	 * =========================================================
+	 */
 	private boolean turnoEstaPresente(
 			int idTurno) {
+
+		if (connection == null
+				|| idTurno <= 0) {
+
+			return false;
+		}
 
 		String sql =
 				"SELECT id_turno "
 				+ "FROM turno "
 				+ "WHERE id_turno = ? "
-				+ "AND estado = 'PRESENTE'";
+				+ "AND estado = 'PRESENTE' "
+				+ "LIMIT 1";
 
 		try (PreparedStatement statement =
 				connection.prepareStatement(sql)) {
@@ -232,12 +378,28 @@ public class ControllerConsulta
 			}
 
 		} catch (SQLException e) {
-			e.printStackTrace();
-		}
 
-		return false;
+			System.err.println(
+					"Error al verificar el estado del turno."
+			);
+
+			e.printStackTrace();
+
+			/*
+			 * FAIL CLOSED:
+			 *
+			 * Si no podemos comprobar que el turno
+			 * esta PRESENTE, no registramos la consulta.
+			 */
+			return false;
+		}
 	}
 
+	/*
+	 * =========================================================
+	 * CONSULTA BASE
+	 * =========================================================
+	 */
 	private String consultaBase() {
 
 		return "SELECT "
@@ -276,6 +438,11 @@ public class ControllerConsulta
 				+ "d.id_disponibilidad";
 	}
 
+	/*
+	 * =========================================================
+	 * MAPEO RESULTSET -> CONSULTA
+	 * =========================================================
+	 */
 	private Consulta crearConsultaDesdeResultSet(
 			ResultSet result)
 			throws SQLException {
