@@ -1,6 +1,8 @@
 # Telemedicina
 
-Sistema de gestión de telemedicina desarrollado en **Java** como proyecto académico de **Programación Avanzada**. La aplicación permite administrar pacientes, profesionales, disponibilidades, turnos y consultas médicas mediante una interfaz gráfica construida con **Java Swing** y persistencia de datos mediante **JDBC + MySQL/MariaDB**.
+Sistema de gestión de telemedicina desarrollado en **Java** como proyecto académico de **Programación Avanzada**.
+
+La aplicación permite administrar pacientes, profesionales, disponibilidades, turnos y consultas médicas mediante una interfaz gráfica desarrollada con **Java Swing**, utilizando **JDBC + MySQL/MariaDB** para la persistencia de datos.
 
 <p align="center">
   <img src="src/resources/imagenes/login.gif" alt="Telemedicina" width="190">
@@ -10,10 +12,12 @@ Sistema de gestión de telemedicina desarrollado en **Java** como proyecto acad�
 
 El sistema implementa dos perfiles de acceso:
 
-- **EMPLEADO / Recepción:** gestiona pacientes, profesionales, turnos e información de consultas.
-- **PROFESIONAL:** administra su disponibilidad, consulta su agenda, informa retrasos, registra consultas realizadas y visualiza el historial correspondiente.
+- **EMPLEADO / Recepción:** administra pacientes, profesionales, turnos e información clínica.
+- **PROFESIONAL:** administra su disponibilidad, consulta su agenda, informa retrasos, registra consultas realizadas y accede a su historial de atenciones.
 
-La autenticación utiliza contraseñas almacenadas mediante **BCrypt** y la navegación se realiza íntegramente mediante ventanas `JFrame`.
+La autenticación utiliza contraseñas almacenadas mediante **BCrypt** y la navegación se realiza mediante ventanas construidas con **Java Swing**.
+
+---
 
 ## Funcionalidades principales
 
@@ -21,15 +25,21 @@ La autenticación utiliza contraseñas almacenadas mediante **BCrypt** y la nave
 
 - Inicio de sesión según rol.
 - Registro y modificación de pacientes.
+- Validación de DNI.
+- Validación de teléfono.
+- Control de DNI duplicado.
 - Eliminación segura de pacientes sin turnos asociados.
-- Registro de nuevos profesionales.
-- Validación de usuario y matrícula duplicados.
+- Registro de profesionales.
+- Validación de nombre de usuario duplicado.
+- Validación de matrícula duplicada.
+- Validación de formato de matrícula.
+- Validación de contraseña.
 - Consulta de disponibilidad de profesionales.
 - Asignación de turnos.
 - Modificación de turnos.
-- Cancelación de turnos.
 - Confirmación de turnos.
 - Registro de llegada del paciente.
+- Cancelación de turnos.
 - Visualización del detalle de turnos.
 - Consulta del historial de pacientes.
 - Visualización de retrasos informados por profesionales.
@@ -39,12 +49,15 @@ La autenticación utiliza contraseñas almacenadas mediante **BCrypt** y la nave
 - Inicio de sesión con perfil profesional.
 - Alta y modificación de disponibilidad.
 - Validación de fechas y horarios.
-- Consulta de agenda de turnos.
+- Control de superposición de disponibilidades.
+- Consulta de agenda.
 - Registro de retraso estimado.
 - Registro de consultas realizadas.
-- Carga de observaciones.
-- Carga de seguimiento opcional.
-- Consulta del historial de consultas.
+- Carga obligatoria de observaciones.
+- Carga opcional de seguimiento.
+- Consulta del historial clínico.
+
+---
 
 ## Tecnologías utilizadas
 
@@ -55,7 +68,10 @@ La autenticación utiliza contraseñas almacenadas mediante **BCrypt** y la nave
 - **XAMPP**
 - **BCrypt**
 - **Eclipse IDE**
-- **Git / GitHub**
+- **Git**
+- **GitHub**
+
+---
 
 ## Conceptos aplicados
 
@@ -67,13 +83,22 @@ La autenticación utiliza contraseñas almacenadas mediante **BCrypt** y la nave
 - JDBC.
 - `PreparedStatement`.
 - `ResultSet`.
-- Relaciones mediante claves foráneas.
-- Patrón **Singleton** para la conexión a la base de datos.
+- `try-with-resources`.
+- Transacciones.
+- `COMMIT` y `ROLLBACK`.
+- `SELECT ... FOR UPDATE`.
+- Claves primarias.
+- Claves foráneas.
+- Restricciones `UNIQUE`.
+- Patrón **Singleton** para centralizar la configuración de acceso a la base.
+- Conexiones JDBC independientes por controller.
 - Separación por capas.
-- Interfaces `Repository` para desacoplar el acceso a datos.
-- Hash seguro de contraseñas mediante BCrypt.
-- Interfaz gráfica con `JFrame`.
-- Validaciones de negocio antes de persistir información.
+- Interfaces `Repository`.
+- BCrypt para almacenamiento seguro de contraseñas.
+- Validaciones de negocio en GUI y backend.
+- Estrategia **fail-closed** en validaciones críticas.
+
+---
 
 ## Arquitectura del proyecto
 
@@ -139,21 +164,23 @@ lib/
 └── mysql-connector-java-5.1.13.jar
 ```
 
+---
+
 ## Base de datos
 
-La base utilizada se llama:
+La base utilizada por el sistema se llama:
 
 ```text
 telemedicina
 ```
 
-El archivo completo para crearla se encuentra en:
+El archivo para reconstruir su estructura y datos iniciales se encuentra en:
 
 ```text
 database/telemedicina.sql
 ```
 
-El esquema contiene las siguientes tablas:
+El esquema contiene las tablas:
 
 ```text
 usuario
@@ -164,11 +191,20 @@ turno
 consulta
 ```
 
-Las relaciones principales se implementan mediante claves foráneas para mantener la integridad de los datos. El sistema conserva el historial médico evitando eliminar pacientes que tengan turnos asociados.
+La integridad de los datos se refuerza mediante:
+
+- claves primarias;
+- claves foráneas;
+- restricciones `UNIQUE`;
+- estados controlados mediante `ENUM`;
+- controles de duplicados desde Java;
+- validaciones adicionales en backend.
+
+---
 
 ## Estados de los turnos
 
-Los turnos utilizan el enum `EstadoTurno` para representar su ciclo de vida dentro del sistema:
+Los turnos utilizan el enum `EstadoTurno`:
 
 ```text
 PENDIENTE
@@ -177,41 +213,295 @@ CANCELADO
 PRESENTE
 ```
 
-Esto permite conservar trazabilidad en lugar de eliminar físicamente los turnos.
+Las transiciones son validadas desde el backend para impedir cambios de estado inválidos.
+
+El flujo normal es:
+
+```text
+PENDIENTE
+    ↓
+CONFIRMADO
+    ↓
+PRESENTE
+```
+
+También pueden cancelarse los turnos cuando su estado lo permite.
+
+---
+
+## Control de horarios y concurrencia
+
+Los turnos trabajan con una duración lógica fija de:
+
+```text
+30 minutos
+```
+
+El sistema valida superposiciones por intervalo.
+
+Por ejemplo:
+
+```text
+10:00 - 10:30
+```
+
+impide registrar:
+
+```text
+10:01
+10:15
+10:29
+```
+
+pero permite:
+
+```text
+10:30
+```
+
+El registro utiliza transacciones y bloqueo:
+
+```text
+SELECT ... FOR UPDATE
+```
+
+para reducir condiciones de carrera durante la asignación de turnos.
+
+La base también incorpora la columna generada:
+
+```text
+hora_activa
+```
+
+y la restricción:
+
+```text
+uq_turno_disponibilidad_hora_activa
+```
+
+para impedir horarios activos duplicados dentro de una misma disponibilidad.
+
+Los turnos cancelados pueden liberar nuevamente su horario.
+
+---
 
 ## Seguridad de contraseñas
 
-Las contraseñas no se almacenan en texto plano. El proyecto utiliza:
+Las contraseñas no se almacenan en texto plano.
+
+El proyecto utiliza:
 
 ```text
 lib/jbcrypt-0.4.jar
 ```
 
-La interfaz `Hashing` centraliza el hash y la verificación mediante BCrypt.
+y BCrypt para generar y verificar los hashes.
 
-## Configuración de la conexión
-
-La configuración actual se encuentra en:
+Para nuevas credenciales profesionales se valida:
 
 ```text
-src/DLL/Conexion.java
+mínimo: 8 bytes
+máximo: 72 bytes
 ```
 
-Por defecto:
+El hash recuperado desde la base se utiliza únicamente durante la autenticación y **no queda almacenado dentro del objeto `Usuario` autenticado**.
+
+---
+
+## Validaciones principales
+
+### Pacientes
+
+El backend valida:
 
 ```text
-URL: jdbc:mysql://localhost:3306/telemedicina
-Usuario: root
-Contraseña: vacía
+DNI:
+7 a 8 dígitos numéricos
+
+Teléfono:
+8 a 15 dígitos numéricos
 ```
 
-Esta configuración corresponde al entorno local utilizado durante el desarrollo con XAMPP. Si la instalación local utiliza otras credenciales, deben modificarse `URL`, `USER` y `PASSWORD` dentro de `Conexion.java`.
+También se impide:
 
-> Para un entorno de producción no se recomienda utilizar el usuario `root` ni almacenar credenciales directamente en el código.
+- registrar DNI duplicados;
+- modificar un paciente utilizando el DNI de otro;
+- eliminar pacientes con turnos asociados.
 
-## Cómo ejecutar el proyecto
+Las comprobaciones críticas trabajan con estrategia **fail-closed**: ante un error al verificar una restricción, la operación se bloquea.
 
-### 1. Requisitos
+### Profesionales
+
+Se valida:
+
+```text
+Matrícula:
+4 a 20 caracteres
+letras
+números
+guiones
+sin espacios
+```
+
+Las matrículas son normalizadas a mayúsculas.
+
+También se controlan:
+
+- nombre de usuario duplicado;
+- matrícula duplicada;
+- longitud de contraseña;
+- campos obligatorios.
+
+### Consultas
+
+Una consulta solamente puede registrarse cuando:
+
+- el turno está en estado `PRESENTE`;
+- las observaciones no están vacías;
+- el turno todavía no posee una consulta.
+
+La base refuerza la última condición mediante:
+
+```text
+UNIQUE(turno_id)
+```
+
+---
+
+# Configuración de la base de datos
+
+## 1. Importar el esquema
+
+Iniciar MySQL/MariaDB desde XAMPP.
+
+Luego ingresar a phpMyAdmin e importar:
+
+```text
+database/telemedicina.sql
+```
+
+La base debe quedar disponible como:
+
+```text
+telemedicina
+```
+
+---
+
+## 2. Crear un usuario para la aplicación
+
+La aplicación **no utiliza `root`**.
+
+Se recomienda crear un usuario específico con permisos limitados.
+
+Ejemplo:
+
+```sql
+CREATE USER IF NOT EXISTS 'telemedicina_app'@'localhost'
+IDENTIFIED BY 'SU_CLAVE_LOCAL';
+
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON telemedicina.*
+TO 'telemedicina_app'@'localhost';
+
+FLUSH PRIVILEGES;
+```
+
+La contraseña utilizada debe permanecer únicamente en el entorno local y no debe incorporarse al repositorio.
+
+---
+
+## 3. Variables de entorno
+
+Las credenciales no se encuentran almacenadas dentro de `Conexion.java`.
+
+La aplicación requiere estas variables:
+
+```text
+TELEMEDICINA_DB_URL
+TELEMEDICINA_DB_USER
+TELEMEDICINA_DB_PASSWORD
+```
+
+Ejemplo de configuración:
+
+```text
+TELEMEDICINA_DB_URL=jdbc:mysql://localhost:3306/telemedicina
+TELEMEDICINA_DB_USER=telemedicina_app
+TELEMEDICINA_DB_PASSWORD=SU_CLAVE_LOCAL
+```
+
+---
+
+## Configuración en Eclipse
+
+Abrir:
+
+```text
+Run
+→ Run Configurations...
+→ Java Application
+→ Main
+→ Environment
+```
+
+Agregar:
+
+```text
+TELEMEDICINA_DB_URL
+TELEMEDICINA_DB_USER
+TELEMEDICINA_DB_PASSWORD
+```
+
+Luego presionar:
+
+```text
+Apply
+```
+
+y ejecutar la configuración `Main`.
+
+---
+
+## Manejo de conexiones
+
+`Conexion` mantiene una instancia Singleton para centralizar la configuración, pero **no mantiene una única `Connection` JDBC global compartida**.
+
+Cada controller obtiene su propia conexión:
+
+```text
+Conexion
+   │
+   ├── Connection → ControllerPaciente
+   ├── Connection → ControllerProfesional
+   ├── Connection → ControllerTurno
+   ├── Connection → ControllerConsulta
+   └── Connection → ControllerUsuario
+```
+
+Esto evita que una operación transaccional como:
+
+```java
+connection.setAutoCommit(false);
+```
+
+afecte accidentalmente a otros controllers.
+
+Antes de abrir el login, `Main` ejecuta un preflight de conexión.
+
+Si MySQL no está disponible o la configuración es incorrecta:
+
+```text
+Error de conexión
+```
+
+se muestra de forma controlada y el sistema no continúa con una conexión inválida.
+
+---
+
+# Cómo ejecutar el proyecto
+
+## 1. Requisitos
 
 Tener instalado:
 
@@ -219,34 +509,61 @@ Tener instalado:
 - Eclipse IDE.
 - XAMPP o un servidor MySQL/MariaDB compatible.
 
-### 2. Iniciar la base de datos
+## 2. Iniciar MySQL
 
-Desde XAMPP iniciar **MySQL**.
+Desde XAMPP:
 
-### 3. Importar la base
+```text
+MySQL → Start
+```
 
-Ingresar a phpMyAdmin e importar:
+## 3. Importar la base
+
+Importar:
 
 ```text
 database/telemedicina.sql
 ```
 
-La base debe quedar disponible con el nombre:
+## 4. Crear el usuario de aplicación
+
+Crear un usuario MySQL/MariaDB con permisos:
 
 ```text
-telemedicina
+SELECT
+INSERT
+UPDATE
+DELETE
 ```
 
-### 4. Verificar las librerías
+sobre:
 
-El proyecto incluye:
+```text
+telemedicina.*
+```
+
+## 5. Configurar variables de entorno
+
+Configurar:
+
+```text
+TELEMEDICINA_DB_URL
+TELEMEDICINA_DB_USER
+TELEMEDICINA_DB_PASSWORD
+```
+
+en la configuración `Main` de Eclipse.
+
+## 6. Verificar las librerías
+
+El proyecto utiliza:
 
 ```text
 lib/jbcrypt-0.4.jar
 lib/mysql-connector-java-5.1.13.jar
 ```
 
-Si Eclipse no las reconoce automáticamente:
+Si Eclipse no las reconoce:
 
 ```text
 Project
@@ -256,9 +573,7 @@ Project
 → Add JARs...
 ```
 
-y agregar ambos archivos.
-
-### 5. Ejecutar
+## 7. Ejecutar
 
 Ejecutar:
 
@@ -266,16 +581,28 @@ Ejecutar:
 src/GUI/Main.java
 ```
 
-como **Java Application**.
+como:
 
-`Main` inicializa la conexión mediante `Conexion.getInstance()` y abre `LoginFrame`.
+```text
+Java Application
+```
+
+Si la conexión es correcta, la consola mostrará:
+
+```text
+Se conecto correctamente a Telemedicina
+```
+
+y se abrirá `LoginFrame`.
+
+---
 
 ## Flujo general
 
 ```text
 Main
  ↓
-Conexion Singleton
+Preflight de conexión
  ↓
 LoginFrame
  ↓
@@ -302,24 +629,11 @@ TipoUsuario
       └── Historial de consultas
 ```
 
-## Interfaz gráfica
-
-La interfaz fue desarrollada completamente con **Java Swing**. Las pantallas principales incluyen recursos gráficos diferenciados según el rol:
-
-```text
-login.gif
-menu_empleado.png
-menu_profesional.png
-ok_empleado.png
-ok_profesional.png
-icono_app.png
-```
-
-Los módulos de gestión mantienen una interfaz orientada a tablas para priorizar la lectura y manipulación de datos.
+---
 
 ## Persistencia y acceso a datos
 
-La aplicación utiliza interfaces dentro del paquete `repository` y clases de implementación dentro de `DLL`:
+La aplicación mantiene separadas la interfaz y la persistencia:
 
 ```text
 GUI
@@ -333,7 +647,19 @@ JDBC
 MySQL / MariaDB
 ```
 
-De esta manera, las ventanas no ejecutan consultas SQL directamente y la responsabilidad de persistencia queda separada de la interfaz gráfica.
+Las ventanas Swing no ejecutan consultas SQL directamente.
+
+Las consultas utilizan:
+
+```text
+PreparedStatement
+try-with-resources
+ResultSet
+```
+
+y las operaciones críticas utilizan transacciones cuando corresponde.
+
+---
 
 ## Estado del proyecto
 
@@ -342,15 +668,23 @@ El sistema cuenta con los principales flujos funcionales implementados y validad
 - Login por roles.
 - Gestión de pacientes.
 - Gestión de profesionales.
-- Gestión completa del ciclo de turnos.
+- Validaciones en GUI y backend.
+- Gestión del ciclo de turnos.
+- Control de superposición de horarios.
 - Disponibilidad profesional.
+- Control de superposición de disponibilidades.
 - Retrasos.
 - Registro de llegada.
 - Registro de consultas.
 - Historial clínico.
-- Integridad referencial en la base de datos.
-- Validaciones de fechas, horarios y duplicados.
-- Interfaz gráfica diferenciada para empleado y profesional.
+- Integridad referencial.
+- Control de duplicados.
+- Transacciones.
+- Manejo controlado de fallos de conexión.
+- Credenciales externas al código fuente.
+- Interfaz gráfica diferenciada para recepción y profesionales.
+
+---
 
 ## Autor
 
