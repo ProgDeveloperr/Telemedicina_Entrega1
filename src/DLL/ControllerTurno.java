@@ -58,14 +58,7 @@ public class ControllerTurno implements TurnoRepository {
 			return false;
 		}
 
-		/*
-		 * La conexion actual sigue siendo compartida.
-		 *
-		 * Mientras no refactoricemos Conexion, sincronizamos
-		 * esta operacion para evitar que dos ControllerTurno
-		 * de la misma aplicacion alteren simultaneamente
-		 * la misma transaccion.
-		 */
+		
 		synchronized (connection) {
 
 			boolean autoCommitOriginal = true;
